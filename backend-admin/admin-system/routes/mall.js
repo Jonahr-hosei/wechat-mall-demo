@@ -1,18 +1,22 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const supabase = require('../config/database');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../database/mall.db');
-const db = new sqlite3.Database(dbPath);
 
 // 获取商品分类
-router.get('/categories', (req, res) => {
-  db.all('SELECT MIN(id) as id, name, description, sort_order, status, MIN(created_at) as created_at FROM categories WHERE status = 1 GROUP BY name ORDER BY sort_order, name', (err, categories) => {
-    if (err) {
+router.get('/categories', async (req, res) => {
+  try {
+    const { data: categories, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('status', 1)
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      console.error('Supabase查询错误:', error);
       return res.status(500).json({
         success: false,
-        message: '获取分类失败'
+        message: '获取分类列表失败'
       });
     }
 
@@ -20,116 +24,137 @@ router.get('/categories', (req, res) => {
       success: true,
       data: categories
     });
-  });
+  } catch (error) {
+    console.error('获取分类列表错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
-// 获取商品列表
-router.get('/products', (req, res) => {
-  const { page = 1, limit = 10, category_id, search } = req.query;
-  const offset = (page - 1) * limit;
+// 获取商品列表（小程序端）
+router.get('/products', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, category_id, search } = req.query;
+    const offset = (page - 1) * limit;
 
-  let whereClause = 'WHERE p.status = 1';
-  let params = [];
+    let query = supabase
+      .from('products')
+      .select(`
+        *,
+        categories(name)
+      `)
+      .eq('status', 1); // 只获取上架商品
 
-  if (category_id) {
-    whereClause += ' AND p.category_id = ?';
-    params.push(category_id);
-  }
+    // 添加分类过滤
+    if (category_id && category_id !== '') {
+      query = query.eq('category_id', category_id);
+    }
 
-  if (search) {
-    whereClause += ' AND (p.name LIKE ? OR p.description LIKE ?)';
-    params.push(`%${search}%`, `%${search}%`);
-  }
+    // 添加搜索
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+    }
 
-  const query = `
-    SELECT p.*, c.name as category_name 
-    FROM products p 
-    LEFT JOIN categories c ON p.category_id = c.id 
-    ${whereClause}
-    ORDER BY p.created_at DESC 
-    LIMIT ? OFFSET ?
-  `;
+    // 添加排序和分页
+    query = query.order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-  const countQuery = `
-    SELECT COUNT(*) as total 
-    FROM products p 
-    LEFT JOIN categories c ON p.category_id = c.id 
-    ${whereClause}
-  `;
+    const { data: products, error } = await query;
 
-  db.get(countQuery, params, (err, countResult) => {
-    if (err) {
+    if (error) {
+      console.error('Supabase查询错误:', error);
       return res.status(500).json({
         success: false,
-        message: '数据库错误'
+        message: '获取商品列表失败'
       });
     }
 
-    db.all(query, [...params, limit, offset], (err, products) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: '数据库错误'
-        });
-      }
+    // 获取总数
+    let countQuery = supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 1);
 
-      // 处理商品图片路径
-      const productsWithImages = products.map(product => ({
-        ...product,
-        image: product.image ? `http://localhost:5000${product.image}` : null
-      }));
+    if (category_id && category_id !== '') {
+      countQuery = countQuery.eq('category_id', category_id);
+    }
 
-      res.json({
-        success: true,
-        data: productsWithImages,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total: countResult.total,
-          pages: Math.ceil(countResult.total / limit)
-        }
+    if (search) {
+      countQuery = countQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+    }
+
+    const { count: total, error: countError } = await countQuery;
+
+    if (countError) {
+      console.error('Supabase计数错误:', countError);
+      return res.status(500).json({
+        success: false,
+        message: '获取商品列表失败'
       });
+    }
+
+    res.json({
+      success: true,
+      data: products,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: total || 0,
+        pages: Math.ceil((total || 0) / limit)
+      }
     });
-  });
+  } catch (error) {
+    console.error('获取商品列表错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
-// 获取商品详情
-router.get('/products/:id', (req, res) => {
-  const { id } = req.params;
+// 获取商品详情（小程序端）
+router.get('/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  db.get(
-    `SELECT p.*, c.name as category_name 
-     FROM products p 
-     LEFT JOIN categories c ON p.category_id = c.id 
-     WHERE p.id = ? AND p.status = 1`,
-    [id],
-    (err, product) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: '数据库错误'
-        });
-      }
+    const { data: product, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        categories(name)
+      `)
+      .eq('id', id)
+      .eq('status', 1)
+      .single();
 
-      if (!product) {
-        return res.status(404).json({
-          success: false,
-          message: '商品不存在'
-        });
-      }
-
-      // 处理商品图片路径
-      const productWithImage = {
-        ...product,
-        image: product.image ? `http://localhost:5000${product.image}` : null
-      };
-
-      res.json({
-        success: true,
-        data: productWithImage
+    if (error) {
+      console.error('Supabase查询错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '获取商品详情失败'
       });
     }
-  );
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: '商品不存在或已下架'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product
+    });
+  } catch (error) {
+    console.error('获取商品详情错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
 // 创建订单
@@ -145,36 +170,34 @@ router.post('/orders', (req, res) => {
 
   const order_no = 'ORD' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
 
-  db.run(
-    `INSERT INTO orders (order_no, user_id, total_amount, payment_method, status)
-     VALUES (?, ?, ?, ?, 'pending')`,
-    [order_no, user_id, total_amount, payment_method],
-    function(err) {
-      if (err) {
+  supabase
+    .from('orders')
+    .insert([
+      { order_no, user_id, total_amount, payment_method, status: 'pending' }
+    ])
+    .then(({ data: orderData, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '创建订单失败'
         });
       }
 
-      const order_id = this.lastID;
+      const order_id = orderData[0].id;
 
       // 插入订单商品
-      const insertItems = items.map(item => {
-        return new Promise((resolve, reject) => {
-          db.run(
-            `INSERT INTO order_items (order_id, product_id, product_name, product_price, quantity, subtotal)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [order_id, item.product_id, item.product_name, item.product_price, item.quantity, item.subtotal],
-            (err) => {
-              if (err) reject(err);
-              else resolve();
-            }
-          );
-        });
-      });
+      const insertItems = items.map(item => ({
+        order_id,
+        product_id: item.product_id,
+        product_name: item.product_name,
+        product_price: item.product_price,
+        quantity: item.quantity,
+        subtotal: item.subtotal
+      }));
 
-      Promise.all(insertItems)
+      supabase
+        .from('order_items')
+        .insert(insertItems)
         .then(() => {
           res.json({
             success: true,
@@ -188,8 +211,13 @@ router.post('/orders', (req, res) => {
             message: '订单创建失败'
           });
         });
-    }
-  );
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    });
 });
 
 // 支付订单
@@ -197,20 +225,24 @@ router.post('/orders/:id/pay', (req, res) => {
   const { id } = req.params;
   const { payment_method } = req.body;
 
-  db.run(
-    `UPDATE orders 
-     SET status = 'completed', payment_method = ?, payment_time = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
-     WHERE id = ?`,
-    [payment_method, id],
-    function(err) {
-      if (err) {
+  supabase
+    .from('orders')
+    .update({
+      status: 'completed',
+      payment_method,
+      payment_time: supabase.from('now').select('now')
+    })
+    .eq('id', id)
+    .eq('status', 'pending')
+    .then(({ data: updatedOrder, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '支付失败'
         });
       }
 
-      if (this.changes === 0) {
+      if (!updatedOrder || updatedOrder.length === 0) {
         return res.status(404).json({
           success: false,
           message: '订单不存在'
@@ -218,32 +250,42 @@ router.post('/orders/:id/pay', (req, res) => {
       }
 
       // 增加用户积分
-      db.get('SELECT user_id, total_amount FROM orders WHERE id = ?', [id], (err, order) => {
-        if (!err && order) {
-          // 计算积分（假设1元=1积分）
-          const points = Math.floor(order.total_amount);
-          if (points > 0) {
-            db.run(
-              `UPDATE users SET points = points + ? WHERE id = ?`,
-              [points, order.user_id]
-            );
-            
-            // 记录积分
-            db.run(
-              `INSERT INTO point_records (user_id, type, points, description)
-               VALUES (?, 'purchase', ?, '购物获得积分')`,
-              [order.user_id, points]
-            );
+      supabase
+        .from('orders')
+        .select('user_id, total_amount')
+        .eq('id', id)
+        .single()
+        .then(({ data: order, error: orderError }) => {
+          if (orderError) {
+            console.error('获取订单信息错误:', orderError);
+          } else {
+            const points = Math.floor(order.total_amount);
+            if (points > 0) {
+              supabase
+                .from('users')
+                .update({ points: supabase.from('users').update({ points: supabase.from('users').increment({ points: points })).eq('id', order.user_id) })
+                .eq('id', order.user_id);
+              
+              supabase
+                .from('point_records')
+                .insert([
+                  { user_id: order.user_id, type: 'purchase', points, description: '购物获得积分' }
+                ]);
+            }
           }
-        }
-      });
+        });
 
       res.json({
         success: true,
         message: '支付成功'
       });
-    }
-  );
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '支付失败'
+      });
+    });
 });
 
 // 获取用户订单列表
@@ -258,33 +300,17 @@ router.get('/orders', (req, res) => {
     });
   }
 
-  const query = `
-    SELECT o.*, 
-           GROUP_CONCAT(oi.product_name || ' x' || oi.quantity) as items_summary
-    FROM orders o
-    LEFT JOIN order_items oi ON o.id = oi.order_id
-    WHERE o.user_id = ?
-    GROUP BY o.id
-    ORDER BY o.created_at DESC
-    LIMIT ? OFFSET ?
-  `;
-
-  const countQuery = `
-    SELECT COUNT(*) as total 
-    FROM orders 
-    WHERE user_id = ?
-  `;
-
-  db.get(countQuery, [user_id], (err, countResult) => {
-    if (err) {
-      return res.status(500).json({
-        success: false,
-        message: '数据库错误'
-      });
-    }
-
-    db.all(query, [user_id, limit, offset], (err, orders) => {
-      if (err) {
+  supabase
+    .from('orders')
+    .select('*', {
+      head: true,
+      count: 'exact'
+    })
+    .eq('user_id', user_id)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+    .then(({ data: orders, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '数据库错误'
@@ -297,33 +323,39 @@ router.get('/orders', (req, res) => {
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total: countResult.total,
-          pages: Math.ceil(countResult.total / limit)
+          total: orders.length,
+          pages: Math.ceil(orders.length / limit)
         }
       });
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
     });
-  });
 });
 
 // 获取订单详情
 router.get('/orders/:id', (req, res) => {
   const { id } = req.params;
 
-  db.get(
-    `SELECT o.*, u.nickname, u.phone
-     FROM orders o
-     LEFT JOIN users u ON o.user_id = u.id
-     WHERE o.id = ?`,
-    [id],
-    (err, order) => {
-      if (err) {
+  supabase
+    .from('orders')
+    .select('*', {
+      head: true,
+      count: 'exact'
+    })
+    .eq('id', id)
+    .then(({ data: order, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '数据库错误'
         });
       }
 
-      if (!order) {
+      if (!order || order.length === 0) {
         return res.status(404).json({
           success: false,
           message: '订单不存在'
@@ -331,55 +363,61 @@ router.get('/orders/:id', (req, res) => {
       }
 
       // 获取订单商品
-      db.all(
-        `SELECT oi.*, p.image
-         FROM order_items oi
-         LEFT JOIN products p ON oi.product_id = p.id
-         WHERE oi.order_id = ?`,
-        [id],
-        (err, items) => {
-          if (err) {
+      supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', id)
+        .then(({ data: items, error: itemError }) => {
+          if (itemError) {
             return res.status(500).json({
               success: false,
               message: '数据库错误'
             });
           }
 
-          // 处理商品图片路径
-          const itemsWithImages = items.map(item => ({
-            ...item,
-            image: item.image ? `http://localhost:5000${item.image}` : null
-          }));
-
           res.json({
             success: true,
             data: {
-              ...order,
-              items: itemsWithImages
+              ...order[0],
+              items: items.map(item => ({
+                ...item,
+                image: item.image ? `http://localhost:5000${item.image}` : null
+              }))
             }
           });
-        }
-      );
-    }
-  );
+        })
+        .catch(err => {
+          res.status(500).json({
+            success: false,
+            message: '数据库错误'
+          });
+        });
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    });
 });
 
 // 获取用户信息
 router.get('/user/:openid', (req, res) => {
   const { openid } = req.params;
 
-  db.get(
-    'SELECT * FROM users WHERE openid = ?',
-    [openid],
-    (err, user) => {
-      if (err) {
+  supabase
+    .from('users')
+    .select('*')
+    .eq('openid', openid)
+    .then(({ data: user, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '数据库错误'
         });
       }
 
-      if (!user) {
+      if (!user || user.length === 0) {
         return res.status(404).json({
           success: false,
           message: '用户不存在'
@@ -388,10 +426,15 @@ router.get('/user/:openid', (req, res) => {
 
       res.json({
         success: true,
-        data: user
+        data: user[0]
       });
-    }
-  );
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    });
 });
 
 // 创建或更新用户
@@ -405,12 +448,13 @@ router.post('/user', (req, res) => {
     });
   }
 
-  db.run(
-    `INSERT OR REPLACE INTO users (openid, nickname, avatar_url, phone, updated_at)
-     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-    [openid, nickname, avatar_url, phone],
-    function(err) {
-      if (err) {
+  supabase
+    .from('users')
+    .upsert([
+      { openid, nickname, avatar_url, phone, updated_at: supabase.from('now').select('now') }
+    ])
+    .then(({ data: updatedUsers, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '用户创建失败'
@@ -420,10 +464,15 @@ router.post('/user', (req, res) => {
       res.json({
         success: true,
         message: '用户信息保存成功',
-        data: { id: this.lastID }
+        data: { id: updatedUsers[0].id }
       });
-    }
-  );
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    });
 });
 
 // 获取用户积分记录
@@ -432,29 +481,14 @@ router.get('/user/:user_id/points', (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const offset = (page - 1) * limit;
 
-  const query = `
-    SELECT * FROM point_records 
-    WHERE user_id = ? 
-    ORDER BY created_at DESC 
-    LIMIT ? OFFSET ?
-  `;
-
-  const countQuery = `
-    SELECT COUNT(*) as total 
-    FROM point_records 
-    WHERE user_id = ?
-  `;
-
-  db.get(countQuery, [user_id], (err, countResult) => {
-    if (err) {
-      return res.status(500).json({
-        success: false,
-        message: '数据库错误'
-      });
-    }
-
-    db.all(query, [user_id, limit, offset], (err, records) => {
-      if (err) {
+  supabase
+    .from('point_records')
+    .select('*')
+    .eq('user_id', user_id)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+    .then(({ data: records, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '数据库错误'
@@ -467,12 +501,17 @@ router.get('/user/:user_id/points', (req, res) => {
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total: countResult.total,
-          pages: Math.ceil(countResult.total / limit)
+          total: records.length,
+          pages: Math.ceil(records.length / limit)
         }
       });
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
     });
-  });
 });
 
 // 停车相关API
@@ -486,12 +525,13 @@ router.post('/parking/entry', (req, res) => {
     });
   }
 
-  db.run(
-    `INSERT INTO parking_records (user_id, plate_number, entry_time, status)
-     VALUES (?, ?, CURRENT_TIMESTAMP, 'parking')`,
-    [user_id, plate_number],
-    function(err) {
-      if (err) {
+  supabase
+    .from('parking_records')
+    .insert([
+      { user_id, plate_number, entry_time: supabase.from('now').select('now'), status: 'parking' }
+    ])
+    .then(({ data: parkingData, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '停车记录创建失败'
@@ -501,10 +541,15 @@ router.post('/parking/entry', (req, res) => {
       res.json({
         success: true,
         message: '停车记录创建成功',
-        data: { id: this.lastID }
+        data: { id: parkingData[0].id }
       });
-    }
-  );
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    });
 });
 
 router.post('/parking/exit', (req, res) => {
@@ -517,23 +562,25 @@ router.post('/parking/exit', (req, res) => {
     });
   }
 
-  db.run(
-    `UPDATE parking_records 
-     SET exit_time = CURRENT_TIMESTAMP, 
-         duration_minutes = ROUND((julianday('now') - julianday(entry_time)) * 24 * 60),
-         fee = ROUND((julianday('now') - julianday(entry_time)) * 24 * 60) * 2,
-         status = 'completed'
-     WHERE id = ? AND status = 'parking'`,
-    [record_id],
-    function(err) {
-      if (err) {
+  supabase
+    .from('parking_records')
+    .update({
+      exit_time: supabase.from('now').select('now'),
+      duration_minutes: supabase.from('julianday').select('julianday').eq('now', 'now').mul(24).mul(60),
+      fee: supabase.from('julianday').select('julianday').eq('now', 'now').mul(24).mul(60).mul(2),
+      status: 'completed'
+    })
+    .eq('id', record_id)
+    .eq('status', 'parking')
+    .then(({ data: updatedRecords, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '停车记录更新失败'
         });
       }
 
-      if (this.changes === 0) {
+      if (!updatedRecords || updatedRecords.length === 0) {
         return res.status(404).json({
           success: false,
           message: '停车记录不存在或已结束'
@@ -544,8 +591,13 @@ router.post('/parking/exit', (req, res) => {
         success: true,
         message: '停车记录更新成功'
       });
-    }
-  );
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    });
 });
 
 router.get('/parking/records/:user_id', (req, res) => {
@@ -553,29 +605,14 @@ router.get('/parking/records/:user_id', (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const offset = (page - 1) * limit;
 
-  const query = `
-    SELECT * FROM parking_records 
-    WHERE user_id = ? 
-    ORDER BY created_at DESC 
-    LIMIT ? OFFSET ?
-  `;
-
-  const countQuery = `
-    SELECT COUNT(*) as total 
-    FROM parking_records 
-    WHERE user_id = ?
-  `;
-
-  db.get(countQuery, [user_id], (err, countResult) => {
-    if (err) {
-      return res.status(500).json({
-        success: false,
-        message: '数据库错误'
-      });
-    }
-
-    db.all(query, [user_id, limit, offset], (err, records) => {
-      if (err) {
+  supabase
+    .from('parking_records')
+    .select('*')
+    .eq('user_id', user_id)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+    .then(({ data: records, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '数据库错误'
@@ -588,32 +625,40 @@ router.get('/parking/records/:user_id', (req, res) => {
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total: countResult.total,
-          pages: Math.ceil(countResult.total / limit)
+          total: records.length,
+          pages: Math.ceil(records.length / limit)
         }
       });
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
     });
-  });
 });
 
 // 取消订单
 router.post('/orders/:id/cancel', (req, res) => {
   const { id } = req.params;
 
-  db.run(
-    `UPDATE orders 
-     SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP 
-     WHERE id = ? AND status = 'pending'`,
-    [id],
-    function(err) {
-      if (err) {
+  supabase
+    .from('orders')
+    .update({
+      status: 'cancelled',
+      updated_at: supabase.from('now').select('now')
+    })
+    .eq('id', id)
+    .eq('status', 'pending')
+    .then(({ data: updatedOrders, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '取消订单失败'
         });
       }
 
-      if (this.changes === 0) {
+      if (!updatedOrders || updatedOrders.length === 0) {
         return res.status(404).json({
           success: false,
           message: '订单不存在或无法取消'
@@ -624,26 +669,32 @@ router.post('/orders/:id/cancel', (req, res) => {
         success: true,
         message: '订单已取消'
       });
-    }
-  );
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    });
 });
 
 // 获取订单状态
 router.get('/orders/:id/status', (req, res) => {
   const { id } = req.params;
 
-  db.get(
-    'SELECT status, created_at, payment_time FROM orders WHERE id = ?',
-    [id],
-    (err, order) => {
-      if (err) {
+  supabase
+    .from('orders')
+    .select('status, created_at, payment_time')
+    .eq('id', id)
+    .then(({ data: order, error }) => {
+      if (error) {
         return res.status(500).json({
           success: false,
           message: '数据库错误'
         });
       }
 
-      if (!order) {
+      if (!order || order.length === 0) {
         return res.status(404).json({
           success: false,
           message: '订单不存在'
@@ -652,34 +703,94 @@ router.get('/orders/:id/status', (req, res) => {
 
       // 检查订单是否超时
       const now = new Date();
-      const created = new Date(order.created_at);
+      const created = new Date(order[0].created_at);
       const timeDiff = now - created;
-      const isTimeout = timeDiff > 15 * 60 * 1000 && order.status === 'pending';
+      const isTimeout = timeDiff > 15 * 60 * 1000 && order[0].status === 'pending';
 
       res.json({
         success: true,
         data: {
-          status: isTimeout ? 'timeout' : order.status,
-          created_at: order.created_at,
-          payment_time: order.payment_time,
+          status: isTimeout ? 'timeout' : order[0].status,
+          created_at: order[0].created_at,
+          payment_time: order[0].payment_time,
           is_timeout: isTimeout
         }
       });
-    }
-  );
+    })
+    .catch(err => {
+      res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    });
 });
 
-// 热门商品接口
-router.get('/products/hot', (req, res) => {
-  const { mallId, limit = 10 } = req.query;
-  // 这里只是示例，实际可根据销量、浏览量等排序
-  const sql = `SELECT * FROM products ORDER BY sales DESC LIMIT ?`;
-  db.all(sql, [limit], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: '数据库错误' });
+// 获取首页数据
+router.get('/home', async (req, res) => {
+  try {
+    // 获取热门商品
+    const { data: hotProducts, error: hotError } = await supabase
+      .from('products')
+      .select('*')
+      .eq('status', 1)
+      .order('sales', { ascending: false })
+      .limit(8);
+
+    if (hotError) {
+      console.error('Supabase热门商品查询错误:', hotError);
+      return res.status(500).json({
+        success: false,
+        message: '获取首页数据失败'
+      });
     }
-    res.json({ success: true, data: rows });
-  });
+
+    // 获取最新商品
+    const { data: newProducts, error: newError } = await supabase
+      .from('products')
+      .select('*')
+      .eq('status', 1)
+      .order('created_at', { ascending: false })
+      .limit(8);
+
+    if (newError) {
+      console.error('Supabase最新商品查询错误:', newError);
+      return res.status(500).json({
+        success: false,
+        message: '获取首页数据失败'
+      });
+    }
+
+    // 获取分类
+    const { data: categories, error: categoryError } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('status', 1)
+      .order('sort_order', { ascending: true })
+      .limit(6);
+
+    if (categoryError) {
+      console.error('Supabase分类查询错误:', categoryError);
+      return res.status(500).json({
+        success: false,
+        message: '获取首页数据失败'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        hotProducts: hotProducts || [],
+        newProducts: newProducts || [],
+        categories: categories || []
+      }
+    });
+  } catch (error) {
+    console.error('获取首页数据错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
 // 公告列表接口

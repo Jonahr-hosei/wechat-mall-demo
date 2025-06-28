@@ -1,205 +1,361 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const supabase = require('../config/database');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../database/mall.db');
-const db = new sqlite3.Database(dbPath);
 
 // 获取订单列表
-router.get('/', (req, res) => {
-  const { page = 1, limit = 10, status, search } = req.query;
-  const offset = (page - 1) * limit;
+router.get('/', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, search, sortField, sortOrder } = req.query;
+    const offset = (page - 1) * limit;
 
-  let whereClause = 'WHERE 1=1';
-  let params = [];
+    let query = supabase
+      .from('orders')
+      .select(`
+        *,
+        users(username, phone)
+      `);
 
-  if (status) {
-    whereClause += ' AND o.status = ?';
-    params.push(status);
-  }
+    // 添加过滤条件
+    if (status !== undefined && status !== '') {
+      query = query.eq('status', status);
+    }
 
-  if (search) {
-    whereClause += ' AND (o.order_no LIKE ? OR u.nickname LIKE ?)';
-    params.push(`%${search}%`, `%${search}%`);
-  }
+    if (search) {
+      query = query.or(`order_no.ilike.%${search}%,users.username.ilike.%${search}%,users.phone.ilike.%${search}%`);
+    }
 
-  const query = `
-    SELECT o.*, u.nickname, u.phone
-    FROM orders o
-    LEFT JOIN users u ON o.user_id = u.id
-    ${whereClause}
-    ORDER BY o.created_at DESC
-    LIMIT ? OFFSET ?
-  `;
+    // 添加排序
+    if (sortField && sortOrder) {
+      const order = sortOrder === 'descend' ? 'desc' : 'asc';
+      query = query.order(sortField, { ascending: order === 'asc' });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
 
-  const countQuery = `
-    SELECT COUNT(*) as total
-    FROM orders o
-    LEFT JOIN users u ON o.user_id = u.id
-    ${whereClause}
-  `;
+    // 添加分页
+    query = query.range(offset, offset + limit - 1);
 
-  db.get(countQuery, params, (err, countResult) => {
-    if (err) {
+    const { data: orders, error } = await query;
+
+    if (error) {
+      console.error('Supabase查询错误:', error);
       return res.status(500).json({
         success: false,
         message: '数据库错误'
       });
     }
 
-    db.all(query, [...params, limit, offset], (err, orders) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: '数据库错误'
-        });
-      }
+    // 获取总数
+    let countQuery = supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true });
 
-      res.json({
-        success: true,
-        data: orders,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total: countResult.total,
-          pages: Math.ceil(countResult.total / limit)
-        }
+    if (status !== undefined && status !== '') {
+      countQuery = countQuery.eq('status', status);
+    }
+
+    if (search) {
+      countQuery = countQuery.or(`order_no.ilike.%${search}%`);
+    }
+
+    const { count: total, error: countError } = await countQuery;
+
+    if (countError) {
+      console.error('Supabase计数错误:', countError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
       });
+    }
+
+    res.json({
+      success: true,
+      data: orders,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: total || 0,
+        pages: Math.ceil((total || 0) / limit)
+      }
     });
-  });
+  } catch (error) {
+    console.error('获取订单列表错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
 // 获取订单详情
-router.get('/:id', (req, res) => {
-  const { id } = req.params;
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  db.get(
-    `SELECT o.*, u.nickname, u.phone
-     FROM orders o
-     LEFT JOIN users u ON o.user_id = u.id
-     WHERE o.id = ?`,
-    [id],
-    (err, order) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: '数据库错误'
-        });
-      }
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        users(username, phone),
+        order_items(
+          *,
+          products(name, price, image)
+        )
+      `)
+      .eq('id', id)
+      .single();
 
-      if (!order) {
-        return res.status(404).json({
-          success: false,
-          message: '订单不存在'
-        });
-      }
-
-      // 获取订单商品详情
-      db.all(
-        `SELECT oi.*, p.name as product_name, p.image
-         FROM order_items oi
-         LEFT JOIN products p ON oi.product_id = p.id
-         WHERE oi.order_id = ?`,
-        [id],
-        (err, items) => {
-          if (err) {
-            return res.status(500).json({
-              success: false,
-              message: '数据库错误'
-            });
-          }
-
-          order.items = items;
-          res.json({
-            success: true,
-            data: order
-          });
-        }
-      );
+    if (error) {
+      console.error('Supabase查询错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
     }
-  );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: '订单不存在'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: order
+    });
+  } catch (error) {
+    console.error('获取订单详情错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 创建订单
+router.post('/', async (req, res) => {
+  try {
+    const {
+      user_id,
+      total_amount,
+      items,
+      address,
+      phone,
+      remark
+    } = req.body;
+
+    if (!user_id || !total_amount || !items || !Array.isArray(items)) {
+      return res.status(400).json({
+        success: false,
+        message: '订单信息不完整'
+      });
+    }
+
+    // 生成订单号
+    const orderNo = 'ORD' + Date.now() + Math.random().toString(36).substr(2, 5).toUpperCase();
+
+    // 创建订单
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert([{
+        order_no: orderNo,
+        user_id: parseInt(user_id),
+        total_amount: parseFloat(total_amount),
+        status: 0, // 待支付
+        address,
+        phone,
+        remark
+      }])
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error('Supabase订单创建错误:', orderError);
+      return res.status(500).json({
+        success: false,
+        message: '订单创建失败'
+      });
+    }
+
+    // 创建订单项
+    const orderItems = items.map(item => ({
+      order_id: order.id,
+      product_id: parseInt(item.product_id),
+      quantity: parseInt(item.quantity),
+      price: parseFloat(item.price)
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) {
+      console.error('Supabase订单项创建错误:', itemsError);
+      return res.status(500).json({
+        success: false,
+        message: '订单项创建失败'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '订单创建成功',
+      data: { id: order.id, order_no: order.order_no }
+    });
+  } catch (error) {
+    console.error('创建订单错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
 // 更新订单状态
-router.put('/:id/status', (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
+router.put('/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
 
-  if (!status) {
-    return res.status(400).json({
-      success: false,
-      message: '订单状态不能为空'
-    });
-  }
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ status: parseInt(status) })
+      .eq('id', id)
+      .select()
+      .single();
 
-  db.run(
-    'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-    [status, id],
-    function(err) {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: '订单状态更新失败'
-        });
-      }
-
-      if (this.changes === 0) {
-        return res.status(404).json({
-          success: false,
-          message: '订单不存在'
-        });
-      }
-
-      res.json({
-        success: true,
-        message: '订单状态更新成功'
+    if (error) {
+      console.error('Supabase状态更新错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '状态更新失败'
       });
     }
-  );
+
+    res.json({
+      success: true,
+      message: '状态更新成功',
+      data
+    });
+  } catch (error) {
+    console.error('更新订单状态错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 删除订单
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 先删除订单项
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .delete()
+      .eq('order_id', id);
+
+    if (itemsError) {
+      console.error('Supabase订单项删除错误:', itemsError);
+      return res.status(500).json({
+        success: false,
+        message: '订单项删除失败'
+      });
+    }
+
+    // 再删除订单
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Supabase订单删除错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '订单删除失败'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '订单删除成功'
+    });
+  } catch (error) {
+    console.error('删除订单错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
 // 获取订单统计
-router.get('/statistics/summary', (req, res) => {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const queries = [
-    'SELECT COUNT(*) as total FROM orders',
-    'SELECT COUNT(*) as today FROM orders WHERE DATE(created_at) = ?',
-    'SELECT SUM(total_amount) as total_amount FROM orders WHERE status = "completed"',
-    'SELECT SUM(total_amount) as today_amount FROM orders WHERE status = "completed" AND DATE(created_at) = ?',
-    'SELECT COUNT(*) as pending FROM orders WHERE status = "pending"',
-    'SELECT COUNT(*) as processing FROM orders WHERE status = "processing"'
-  ];
+router.get('/statistics/summary', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
 
-  Promise.all(queries.map(query => {
-    return new Promise((resolve, reject) => {
-      db.get(query, query.includes('DATE') ? [today] : [], (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
+    // 获取总订单数
+    const { count: total, error: totalError } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true });
+
+    if (totalError) {
+      console.error('Supabase总订单数查询错误:', totalError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
       });
-    });
-  }))
-  .then(results => {
-    const [total, today, totalAmount, todayAmount, pending, processing] = results;
+    }
+
+    // 获取今日订单数
+    const { count: todayCount, error: todayError } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today);
+
+    if (todayError) {
+      console.error('Supabase今日订单数查询错误:', todayError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    // 获取总金额
+    const { data: totalAmount, error: amountError } = await supabase
+      .from('orders')
+      .select('total_amount');
+
+    if (amountError) {
+      console.error('Supabase总金额查询错误:', amountError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    const totalAmountSum = totalAmount.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+
     res.json({
       success: true,
       data: {
-        total: total.total,
-        today: today.today,
-        totalAmount: totalAmount.total_amount || 0,
-        todayAmount: todayAmount.today_amount || 0,
-        pending: pending.pending,
-        processing: processing.processing
+        total: total || 0,
+        today: todayCount || 0,
+        totalAmount: totalAmountSum
       }
     });
-  })
-  .catch(err => {
+  } catch (error) {
+    console.error('获取订单统计错误:', error);
     res.status(500).json({
       success: false,
-      message: '获取统计数据失败'
+      message: '服务器错误'
     });
-  });
+  }
 });
 
 module.exports = router; 
