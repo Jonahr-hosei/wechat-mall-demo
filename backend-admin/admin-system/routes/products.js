@@ -11,6 +11,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
 );
 
+// 添加权限检查
+console.log('Supabase 配置检查:');
+console.log('- SUPABASE_URL:', process.env.SUPABASE_URL ? '已配置' : '未配置');
+console.log('- SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '已配置' : '未配置');
+console.log('- SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? '已配置' : '未配置');
+
 // 配置 multer 为内存存储
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
