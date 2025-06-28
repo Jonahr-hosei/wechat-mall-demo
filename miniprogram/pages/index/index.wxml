@@ -79,7 +79,7 @@
           bindtap="onProductTap"
           data-id="{{item.id}}"
         >
-          <image src="{{item.image}}" mode="aspectFill" class="product-image" binderror="onImageError" data-type="hot" data-index="{{index}}"/>
+          <image src="{{item.image || '/images/default-category.svg'}}" mode="aspectFill" class="product-image" binderror="onImageError" data-type="hot" data-index="{{index}}"/>
           <view class="product-info">
             <text class="product-name">{{item.name}}</text>
             <text class="product-price">¥{{item.price}}</text>
@@ -102,7 +102,7 @@
           bindtap="onProductTap"
           data-id="{{item.id}}"
         >
-          <image src="{{item.image}}" mode="aspectFill" class="product-image" binderror="onImageError" data-type="new" data-index="{{index}}"/>
+          <image src="{{item.image || '/images/default-category.svg'}}" mode="aspectFill" class="product-image" binderror="onImageError" data-type="new" data-index="{{index}}"/>
           <view class="product-info">
             <text class="product-name">{{item.name}}</text>
             <text class="product-price">¥{{item.price}}</text>

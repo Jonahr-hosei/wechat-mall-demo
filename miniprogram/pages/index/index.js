@@ -83,7 +83,8 @@ Page({
           return products.map(item => {
             let imageUrl = item.image;
             if (imageUrl && imageUrl.startsWith('/uploads/')) {
-              imageUrl = `https://wechat-mall-demo.vercel.app${imageUrl}`;
+              // 如果是本地路径，设为null，避免404错误
+              imageUrl = null;
             }
             return { ...item, image: imageUrl };
           });
@@ -123,7 +124,8 @@ Page({
           return products.map(item => {
             let imageUrl = item.image;
             if (imageUrl && imageUrl.startsWith('/uploads/')) {
-              imageUrl = `https://wechat-mall-demo.vercel.app${imageUrl}`;
+              // 如果是本地路径，设为null，避免404错误
+              imageUrl = null;
             }
             return { ...item, image: imageUrl };
           });

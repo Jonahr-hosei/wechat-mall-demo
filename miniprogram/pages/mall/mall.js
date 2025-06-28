@@ -120,8 +120,8 @@ Page({
           // 修复图片路径
           let imageUrl = item.image;
           if (imageUrl && imageUrl.startsWith('/uploads/')) {
-            // 如果是本地路径，转换为完整的Vercel URL
-            imageUrl = `https://wechat-mall-demo.vercel.app${imageUrl}`;
+            // 如果是本地路径，设为null，避免404错误
+            imageUrl = null;
           }
           
           return { 
