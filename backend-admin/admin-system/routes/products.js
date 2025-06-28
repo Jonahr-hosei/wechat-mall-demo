@@ -1,22 +1,19 @@
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
-const supabase = require('../config/database');
+const { createClient } = require('@supabase/supabase-js');
 
 const router = express.Router();
 
-// 文件上传配置
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// 配置 Supabase 客户端
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
+);
 
-const upload = multer({ storage: storage });
+// 配置 multer 为内存存储
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // 获取商品列表
 router.get('/', async (req, res) => {
@@ -170,9 +167,6 @@ router.post('/', upload.single('image'), async (req, res) => {
       points
     } = req.body;
 
-    console.log('收到商品创建请求:', { name, price, category_id });
-    console.log('上传的文件:', req.file);
-
     if (!name || !price) {
       return res.status(400).json({
         success: false,
@@ -180,9 +174,48 @@ router.post('/', upload.single('image'), async (req, res) => {
       });
     }
 
-    const image = req.file ? `/uploads/${req.file.filename}` : null;
-    console.log('图片路径:', image);
+    let imageUrl = null;
+    
+    // 如果有上传图片，上传到 Supabase Storage
+    if (req.file) {
+      try {
+        // 生成唯一文件名
+        const ext = req.file.originalname.split('.').pop();
+        const fileName = `product-${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+        
+        // 上传到 Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('products-images')
+          .upload(fileName, req.file.buffer, {
+            contentType: req.file.mimetype,
+            upsert: false
+          });
 
+        if (uploadError) {
+          console.error('图片上传失败:', uploadError);
+          return res.status(500).json({
+            success: false,
+            message: '图片上传失败: ' + uploadError.message
+          });
+        }
+
+        // 获取公开URL
+        const { data: urlData } = supabase.storage
+          .from('products-images')
+          .getPublicUrl(fileName);
+        
+        imageUrl = urlData.publicUrl;
+        console.log('图片上传成功，URL:', imageUrl);
+      } catch (imageError) {
+        console.error('图片处理错误:', imageError);
+        return res.status(500).json({
+          success: false,
+          message: '图片处理失败'
+        });
+      }
+    }
+
+    // 创建商品记录
     const { data, error } = await supabase
       .from('products')
       .insert([{
@@ -190,7 +223,7 @@ router.post('/', upload.single('image'), async (req, res) => {
         description,
         price: parseFloat(price),
         original_price: original_price ? parseFloat(original_price) : null,
-        image,
+        image: imageUrl,
         category_id: category_id ? parseInt(category_id) : null,
         stock: stock ? parseInt(stock) : 0,
         points: points ? parseInt(points) : 0
@@ -202,11 +235,10 @@ router.post('/', upload.single('image'), async (req, res) => {
       console.error('Supabase插入错误:', error);
       return res.status(500).json({
         success: false,
-        message: '商品创建失败'
+        message: '商品创建失败: ' + error.message
       });
     }
 
-    console.log('商品创建成功，ID:', data.id);
     res.json({
       success: true,
       message: '商品创建成功',
@@ -247,9 +279,43 @@ router.put('/:id', upload.single('image'), async (req, res) => {
       status: status !== undefined ? parseInt(status) : undefined
     };
 
-    // 如果有上传新图片，添加图片路径
+    // 如果有上传新图片，上传到 Supabase Storage
     if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
+      try {
+        // 生成唯一文件名
+        const ext = req.file.originalname.split('.').pop();
+        const fileName = `product-${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
+        
+        // 上传到 Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('products-images')
+          .upload(fileName, req.file.buffer, {
+            contentType: req.file.mimetype,
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('图片上传失败:', uploadError);
+          return res.status(500).json({
+            success: false,
+            message: '图片上传失败: ' + uploadError.message
+          });
+        }
+
+        // 获取公开URL
+        const { data: urlData } = supabase.storage
+          .from('products-images')
+          .getPublicUrl(fileName);
+        
+        updateData.image = urlData.publicUrl;
+        console.log('图片上传成功，URL:', updateData.image);
+      } catch (imageError) {
+        console.error('图片处理错误:', imageError);
+        return res.status(500).json({
+          success: false,
+          message: '图片处理失败'
+        });
+      }
     }
 
     // 移除undefined的字段
@@ -268,7 +334,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
       console.error('Supabase更新错误:', error);
       return res.status(500).json({
         success: false,
-        message: '商品更新失败'
+        message: '商品更新失败: ' + error.message
       });
     }
 
