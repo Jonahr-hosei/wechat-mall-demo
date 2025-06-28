@@ -1,0 +1,69 @@
+<!--mall.wxml-->
+<view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input 
+      class="search-input" 
+      type="text"
+      placeholder="搜索商品..." 
+      placeholder-class="search-placeholder"
+      value="{{searchKeyword}}"
+      bindinput="onSearchInput"
+      bindconfirm="onSearch"
+    />
+    <button class="search-btn" bindtap="onSearch">搜索</button>
+  </view>
+
+  <!-- 分类筛选 -->
+  <view class="category-filter">
+    <scroll-view scroll-x="true" class="category-scroll">
+      <view class="category-list">
+        <view 
+          wx:for="{{categories}}" 
+          wx:key="id"
+          class="category-item {{selectedCategory === item.id ? 'active' : ''}}" 
+          bindtap="selectCategory" 
+          data-category="{{item.id}}"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 商品列表，两列卡片 -->
+  <view class="product-list">
+    <view 
+      class="product-card" 
+      wx:for="{{products}}" 
+      wx:key="id" 
+      style="width:48%;display:inline-block;margin:1% 1% 10px 1%;vertical-align:top;"
+      bindtap="goToProductDetail"
+      data-id="{{item.id}}"
+    >
+      <image 
+        class="product-image" 
+        src="{{item.image}}" 
+        mode="aspectFill"
+        wx:if="{{item.image}}"
+      ></image>
+      <view class="no-image" wx:else>
+        <text>暂无图片</text>
+      </view>
+      <view class="product-info">
+        <view class="product-name">{{item.name}}</view>
+        <view class="product-desc">{{item.description}}</view>
+        <view class="product-category">分类：{{item.category_name}}</view>
+        <view class="product-bottom">
+          <view class="product-price">¥{{item.price}}</view>
+          <view class="product-sales">已售{{item.sales || 0}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 无数据提示 -->
+  <view class="no-data" wx:if="{{products.length === 0 && !loading}}">
+    <text>暂无商品</text>
+  </view>
+</view> 

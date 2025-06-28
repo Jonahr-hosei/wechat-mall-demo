@@ -1,0 +1,68 @@
+.App {
+  text-align: left;
+}
+
+.dashboard h2,
+.products-page h2 {
+  margin-bottom: 24px;
+  color: #1890ff;
+  font-weight: bold;
+}
+
+.ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+}
+
+.ant-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.ant-statistic-title {
+  font-size: 14px;
+  color: #666;
+}
+
+.ant-statistic-content {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.ant-btn-link {
+  padding: 0;
+  height: auto;
+}
+
+.ant-modal-header {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ant-modal-title {
+  font-weight: 600;
+}
+
+.ant-form-item-label > label {
+  font-weight: 500;
+}
+
+.ant-table-pagination {
+  margin: 16px 0;
+}
+
+.ant-tag {
+  border-radius: 4px;
+}
+
+.ant-input-number {
+  width: 100%;
+}
+
+.ant-upload-list-picture-card .ant-upload-list-item {
+  width: 100px;
+  height: 100px;
+}
+
+.ant-upload.ant-upload-select-picture-card {
+  width: 100px;
+  height: 100px;
+} 

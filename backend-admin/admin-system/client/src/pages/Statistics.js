@@ -1,0 +1,271 @@
+import React, { useState, useEffect } from 'react';
+import { Card, Row, Col, Statistic, Table, Select, DatePicker } from 'antd';
+import { 
+  UserOutlined, 
+  ShoppingOutlined, 
+  ShoppingCartOutlined,
+  CarOutlined,
+  GiftOutlined,
+  RiseOutlined
+} from '@ant-design/icons';
+import axios from 'axios';
+
+const { Option } = Select;
+const { RangePicker } = DatePicker;
+
+const Statistics = () => {
+  const [overview, setOverview] = useState({});
+  const [salesTrend, setSalesTrend] = useState([]);
+  const [productRanking, setProductRanking] = useState([]);
+  const [userActivity, setUserActivity] = useState([]);
+  const [parkingUsage, setParkingUsage] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState(7);
+
+  useEffect(() => {
+    fetchAllData();
+  }, [timeRange]);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const [overviewRes, salesRes, rankingRes, userRes, parkingRes] = await Promise.all([
+        axios.get('/api/statistics/overview'),
+        axios.get(`/api/statistics/sales-trend?days=${timeRange}`),
+        axios.get('/api/statistics/product-ranking?limit=10'),
+        axios.get(`/api/statistics/user-activity?days=${timeRange}`),
+        axios.get(`/api/statistics/parking-usage?days=${timeRange}`)
+      ]);
+
+      setOverview(overviewRes.data.data);
+      setSalesTrend(salesRes.data.data);
+      setProductRanking(rankingRes.data.data);
+      setUserActivity(userRes.data.data);
+      setParkingUsage(parkingRes.data.data);
+    } catch (error) {
+      console.error('获取数据失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const productColumns = [
+    {
+      title: '排名',
+      key: 'rank',
+      width: 60,
+      render: (_, __, index) => index + 1,
+    },
+    {
+      title: '商品名称',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: '分类',
+      dataIndex: 'category_name',
+      key: 'category_name',
+    },
+    {
+      title: '销量',
+      dataIndex: 'sales',
+      key: 'sales',
+      render: (sales) => (
+        <span style={{ color: '#1890ff', fontWeight: 'bold' }}>{sales}</span>
+      ),
+    },
+    {
+      title: '价格',
+      dataIndex: 'price',
+      key: 'price',
+      render: (price) => `¥${price}`,
+    },
+  ];
+
+  const salesColumns = [
+    {
+      title: '日期',
+      dataIndex: 'date',
+      key: 'date',
+    },
+    {
+      title: '订单数',
+      dataIndex: 'order_count',
+      key: 'order_count',
+      render: (count) => (
+        <span style={{ color: '#1890ff', fontWeight: 'bold' }}>{count}</span>
+      ),
+    },
+    {
+      title: '营收',
+      dataIndex: 'revenue',
+      key: 'revenue',
+      render: (revenue) => (
+        <span style={{ color: '#e74c3c', fontWeight: 'bold' }}>
+          ¥{revenue || 0}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <h2>数据统计</h2>
+      
+      {/* 时间范围选择 */}
+      <div style={{ marginBottom: 24 }}>
+        <Select
+          value={timeRange}
+          onChange={setTimeRange}
+          style={{ width: 200 }}
+        >
+          <Option value={7}>最近7天</Option>
+          <Option value={30}>最近30天</Option>
+          <Option value={90}>最近90天</Option>
+        </Select>
+      </div>
+
+      {/* 总体统计 */}
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="总用户数"
+              value={overview.users?.total || 0}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#3f8600' }}
+            />
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              今日新增: {overview.users?.today || 0}
+            </div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="商品总数"
+              value={overview.products?.total || 0}
+              prefix={<ShoppingOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              上架商品: {overview.products?.active || 0}
+            </div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="订单总数"
+              value={overview.orders?.total || 0}
+              prefix={<ShoppingCartOutlined />}
+              valueStyle={{ color: '#722ed1' }}
+            />
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              今日订单: {overview.orders?.today || 0}
+            </div>
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card>
+            <Statistic
+              title="总营收"
+              value={overview.orders?.revenue || 0}
+              prefix="¥"
+              valueStyle={{ color: '#cf1322' }}
+            />
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              今日营收: ¥{overview.orders?.todayRevenue || 0}
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Col span={8}>
+          <Card>
+            <Statistic
+              title="停车记录"
+              value={overview.parking?.total || 0}
+              prefix={<CarOutlined />}
+              valueStyle={{ color: '#13c2c2' }}
+            />
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              正在停车: {overview.parking?.now || 0}
+            </div>
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card>
+            <Statistic
+              title="停车收入"
+              value={overview.parking?.revenue || 0}
+              prefix="¥"
+              valueStyle={{ color: '#fa8c16' }}
+            />
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card>
+            <Statistic
+              title="总积分"
+              value={overview.points?.total || 0}
+              prefix={<GiftOutlined />}
+              valueStyle={{ color: '#eb2f96' }}
+            />
+            <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
+              有积分用户: {overview.points?.users || 0}
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* 销售趋势和商品排行 */}
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Col span={12}>
+          <Card title="销售趋势" loading={loading}>
+            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ textAlign: 'center' }}>
+                <RiseOutlined style={{ fontSize: 48, color: '#52c41a' }} />
+                <div style={{ marginTop: 16 }}>
+                  近{timeRange}天销售趋势
+                </div>
+                <div style={{ fontSize: '12px', color: '#666', marginTop: 8 }}>
+                  共 {salesTrend.length} 天有销售记录
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card title="商品销售排行" loading={loading}>
+            <Table
+              columns={productColumns}
+              dataSource={productRanking}
+              pagination={false}
+              size="small"
+              rowKey="name"
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* 销售趋势详情 */}
+      <Row gutter={16}>
+        <Col span={24}>
+          <Card title="销售趋势详情" loading={loading}>
+            <Table
+              columns={salesColumns}
+              dataSource={salesTrend}
+              pagination={false}
+              size="small"
+              rowKey="date"
+            />
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+};
+
+export default Statistics; 

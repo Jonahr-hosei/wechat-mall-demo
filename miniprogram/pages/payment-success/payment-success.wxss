@@ -1,0 +1,129 @@
+/* payment-success.wxss */
+.container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 40rpx;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.success-content {
+  background-color: white;
+  border-radius: 20rpx;
+  padding: 60rpx 40rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 成功图标 */
+.success-icon {
+  margin-bottom: 40rpx;
+}
+
+/* 成功标题 */
+.success-title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #07c160;
+  margin-bottom: 20rpx;
+}
+
+.success-subtitle {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 60rpx;
+}
+
+/* 订单信息 */
+.order-info {
+  background-color: #f8f9fa;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  margin-bottom: 60rpx;
+  text-align: left;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.value {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.value.amount {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #e74c3c;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-bottom: 60rpx;
+}
+
+.primary-btn {
+  background-color: #07c160;
+  color: white;
+  border: none;
+  border-radius: 50rpx;
+  height: 90rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.primary-btn:active {
+  opacity: 0.8;
+}
+
+.secondary-btn {
+  background-color: white;
+  color: #666;
+  border: 2rpx solid #ddd;
+  border-radius: 50rpx;
+  height: 80rpx;
+  font-size: 28rpx;
+}
+
+.secondary-btn:active {
+  background-color: #f5f5f5;
+}
+
+/* 温馨提示 */
+.tips {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.tip-item {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  font-size: 24rpx;
+  color: #999;
+  justify-content: center;
+} 

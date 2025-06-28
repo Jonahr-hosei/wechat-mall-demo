@@ -1,0 +1,236 @@
+/**app.wxss**/
+
+/* 全局页面设置 */
+page {
+  background-color: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* 全局容器样式 */
+.container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* 通用容器样式 */
+.page-container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* 内容区域样式 */
+.content {
+  width: 100%;
+  flex: 1;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* 通用按钮样式 */
+.btn-primary {
+  background-color: #3cc51f;
+  color: white;
+  border: none;
+  border-radius: 8rpx;
+  padding: 20rpx 40rpx;
+  font-size: 32rpx;
+  width: auto;
+  min-width: 200rpx;
+  box-sizing: border-box;
+}
+
+.btn-secondary {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  padding: 20rpx 40rpx;
+  font-size: 32rpx;
+  width: auto;
+  min-width: 200rpx;
+  box-sizing: border-box;
+}
+
+/* 卡片样式 */
+.card {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  width: calc(100% - 40rpx);
+  box-sizing: border-box;
+}
+
+/* 商品卡片样式 */
+.product-card {
+  background-color: white;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  width: calc(100% - 40rpx);
+  box-sizing: border-box;
+}
+
+.product-image {
+  width: 100%;
+  height: 400rpx;
+  background-color: #f0f0f0;
+  box-sizing: border-box;
+}
+
+.product-info {
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+.product-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.product-price {
+  font-size: 36rpx;
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.product-original-price {
+  font-size: 28rpx;
+  color: #999;
+  text-decoration: line-through;
+  margin-left: 10rpx;
+}
+
+/* 列表样式 */
+.list-item {
+  background-color: white;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+/* 积分样式 */
+.points-badge {
+  background-color: #ff6b35;
+  color: white;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* 停车信息样式 */
+.parking-info {
+  background-color: #e8f5e8;
+  border: 1rpx solid #3cc51f;
+  border-radius: 8rpx;
+  padding: 20rpx;
+  margin: 20rpx;
+  width: calc(100% - 40rpx);
+  box-sizing: border-box;
+}
+
+.parking-time {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+  word-wrap: break-word;
+}
+
+.parking-fee {
+  font-size: 36rpx;
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+/* 加载状态 */
+.loading {
+  text-align: center;
+  padding: 40rpx;
+  color: #999;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 100rpx 40rpx;
+  color: #999;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.empty-state image {
+  width: 200rpx;
+  height: 200rpx;
+  margin-bottom: 20rpx;
+}
+
+/* 响应式网格布局 */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300rpx, 1fr));
+  gap: 20rpx;
+  padding: 20rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 弹性布局容器 */
+.flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.flex-item {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* 文本溢出处理 */
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-wrap {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* 安全区域适配 */
+.safe-area {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+} 

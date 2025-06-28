@@ -1,0 +1,26 @@
+.products-page {
+  padding: 0;
+}
+
+.products-page .ant-card {
+  margin-bottom: 16px;
+}
+
+.products-page .ant-statistic {
+  text-align: center;
+}
+
+.products-page .ant-upload-list-picture-card .ant-upload-list-item {
+  width: 80px;
+  height: 80px;
+}
+
+.products-page .ant-upload.ant-upload-select-picture-card {
+  width: 80px;
+  height: 80px;
+}
+
+.products-page .ant-image {
+  border-radius: 4px;
+  overflow: hidden;
+} 

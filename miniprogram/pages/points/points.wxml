@@ -1,0 +1,97 @@
+<!--points.wxml-->
+<view class="container">
+  <!-- 积分卡片 -->
+  <view class="points-card">
+    <view class="points-header">
+      <text class="points-title">我的积分</text>
+      <text class="points-rules" bindtap="showPointsRules">积分规则</text>
+    </view>
+    <view class="points-content">
+      <view class="points-number">{{userPoints}}</view>
+      <view class="points-desc">可用积分</view>
+    </view>
+    <view class="points-actions">
+      <view class="action-item" bindtap="navigateToEarn">
+        <image src="/images/earn-points.png" class="action-icon"/>
+        <text class="action-text">赚积分</text>
+      </view>
+      <view class="action-item" bindtap="navigateToExchange">
+        <image src="/images/exchange-points.png" class="action-icon"/>
+        <text class="action-text">兑好礼</text>
+      </view>
+      <view class="action-item" bindtap="navigateToHistory">
+        <image src="/images/points-history.png" class="action-icon"/>
+        <text class="action-text">积分明细</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 积分任务 -->
+  <view class="tasks-section">
+    <view class="section-header">
+      <text class="section-title">每日任务</text>
+      <text class="section-desc">完成任务获得积分</text>
+    </view>
+    <view class="task-list">
+      <view class="task-item" wx:for="{{dailyTasks}}" wx:key="id">
+        <view class="task-info">
+          <image src="{{item.icon}}" class="task-icon"/>
+          <view class="task-details">
+            <text class="task-name">{{item.name}}</text>
+            <text class="task-desc">{{item.description}}</text>
+          </view>
+        </view>
+        <view class="task-action">
+          <text class="task-points">+{{item.points}}</text>
+          <button class="task-btn {{item.completed ? 'completed' : ''}}" 
+                  bindtap="completeTask" 
+                  data-id="{{item.id}}"
+                  disabled="{{item.completed}}">
+            {{item.completed ? '已完成' : '去完成'}}
+          </button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 积分兑换 -->
+  <view class="exchange-section">
+    <view class="section-header">
+      <text class="section-title">积分兑换</text>
+      <text class="section-more" bindtap="navigateToExchange">查看更多</text>
+    </view>
+    <scroll-view class="exchange-scroll" scroll-x="{{true}}">
+      <view class="exchange-item" 
+            wx:for="{{exchangeItems}}" 
+            wx:key="id" 
+            bindtap="exchangeItem" 
+            data-id="{{item.id}}">
+        <image src="{{item.image}}" class="exchange-image" mode="aspectFill"/>
+        <view class="exchange-info">
+          <text class="exchange-name">{{item.name}}</text>
+          <text class="exchange-points">{{item.points}}积分</text>
+          <text class="exchange-original" wx:if="{{item.originalPrice}}">价值¥{{item.originalPrice}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 积分记录 -->
+  <view class="history-section">
+    <view class="section-header">
+      <text class="section-title">最近积分记录</text>
+      <text class="section-more" bindtap="navigateToHistory">查看更多</text>
+    </view>
+    <view class="history-list">
+      <view class="history-item" wx:for="{{pointsHistory}}" wx:key="id">
+        <view class="history-info">
+          <text class="history-title">{{item.title}}</text>
+          <text class="history-time">{{item.time}}</text>
+        </view>
+        <text class="history-points {{item.type === 'earn' ? 'earn' : 'spend'}}">
+          {{item.type === 'earn' ? '+' : '-'}}{{item.points}}
+        </text>
+      </view>
+    </view>
+  </view>
+</view> 

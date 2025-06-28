@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>图标生成器</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon { width: 81px; height: 81px; margin: 10px; display: inline-block; }
+        .download { margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>微信小程序图标生成器</h1>
+    <p>右键点击图标，选择"图片另存为"来下载图标文件</p>
+    
+    <h2>底部导航图标 (81x81px)</h2>
+    
+    <div>
+        <canvas id="home" class="icon"></canvas>
+        <canvas id="home-active" class="icon"></canvas>
+        <div class="download">home.png / home-active.png</div>
+    </div>
+    
+    <div>
+        <canvas id="mall" class="icon"></canvas>
+        <canvas id="mall-active" class="icon"></canvas>
+        <div class="download">mall.png / mall-active.png</div>
+    </div>
+    
+    <div>
+        <canvas id="parking" class="icon"></canvas>
+        <canvas id="parking-active" class="icon"></canvas>
+        <div class="download">parking.png / parking-active.png</div>
+    </div>
+    
+    <div>
+        <canvas id="points" class="icon"></canvas>
+        <canvas id="points-active" class="icon"></canvas>
+        <div class="download">points.png / points-active.png</div>
+    </div>
+    
+    <div>
+        <canvas id="user" class="icon"></canvas>
+        <canvas id="user-active" class="icon"></canvas>
+        <div class="download">user.png / user-active.png</div>
+    </div>
+
+    <script>
+        function drawIcon(canvasId, text, color, bgColor) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // 设置画布大小
+            canvas.width = 81;
+            canvas.height = 81;
+            
+            // 绘制背景
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, 81, 81);
+            
+            // 绘制图标
+            ctx.fillStyle = color;
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 40, 40);
+        }
+        
+        // 生成图标
+        drawIcon('home', '🏠', '#7A7E83', '#ffffff');
+        drawIcon('home-active', '🏠', '#3cc51f', '#ffffff');
+        drawIcon('mall', '🛍️', '#7A7E83', '#ffffff');
+        drawIcon('mall-active', '🛍️', '#3cc51f', '#ffffff');
+        drawIcon('parking', '🚗', '#7A7E83', '#ffffff');
+        drawIcon('parking-active', '🚗', '#3cc51f', '#ffffff');
+        drawIcon('points', '🎁', '#7A7E83', '#ffffff');
+        drawIcon('points-active', '🎁', '#3cc51f', '#ffffff');
+        drawIcon('user', '👤', '#7A7E83', '#ffffff');
+        drawIcon('user-active', '👤', '#3cc51f', '#ffffff');
+    </script>
+</body>
+</html> 

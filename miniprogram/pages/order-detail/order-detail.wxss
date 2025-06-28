@@ -1,0 +1,288 @@
+/* order-detail.wxss */
+.container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20rpx;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.order-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+/* 订单状态 */
+.status-section {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.status-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.status-value {
+  font-size: 28rpx;
+  font-weight: bold;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.status-value.pending {
+  background-color: #fff7e6;
+  color: #fa8c16;
+}
+
+.status-value.completed {
+  background-color: #f6ffed;
+  color: #52c41a;
+}
+
+.status-value.cancelled {
+  background-color: #fff2f0;
+  color: #ff4d4f;
+}
+
+.status-value.timeout {
+  background-color: #fff2f0;
+  color: #ff4d4f;
+}
+
+.status-desc {
+  font-size: 26rpx;
+  color: #666;
+}
+
+/* 通用样式 */
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+/* 订单信息 */
+.order-info {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.value-container {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.value {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.copy-btn {
+  background-color: #f0f0f0;
+  color: #666;
+  border: none;
+  border-radius: 20rpx;
+  padding: 8rpx 16rpx;
+  font-size: 24rpx;
+}
+
+.copy-btn:active {
+  background-color: #e0e0e0;
+}
+
+/* 商品信息 */
+.products-section {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.product-item {
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx;
+  border: 1rpx solid #f0f0f0;
+  border-radius: 12rpx;
+}
+
+.product-image {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 8rpx;
+}
+
+.no-image {
+  width: 120rpx;
+  height: 120rpx;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 24rpx;
+}
+
+.product-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.product-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.product-price {
+  font-size: 26rpx;
+  color: #e74c3c;
+}
+
+.product-quantity {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.product-subtotal {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #e74c3c;
+  align-self: flex-end;
+}
+
+/* 金额信息 */
+.amount-section {
+  background-color: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.amount-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.amount-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.amount-item.total {
+  border-top: 1rpx solid #f0f0f0;
+  padding-top: 15rpx;
+  margin-top: 10rpx;
+}
+
+.amount-item.total .value {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #e74c3c;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.primary-btn, .secondary-btn {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  border: none;
+}
+
+.primary-btn {
+  background-color: #07c160;
+  color: white;
+}
+
+.primary-btn:active {
+  opacity: 0.8;
+}
+
+.secondary-btn {
+  background-color: white;
+  color: #666;
+  border: 2rpx solid #ddd;
+}
+
+.secondary-btn:active {
+  background-color: #f5f5f5;
+}
+
+/* 错误状态 */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  gap: 30rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.back-btn {
+  background-color: #07c160;
+  color: white;
+  border: none;
+  border-radius: 40rpx;
+  padding: 20rpx 40rpx;
+  font-size: 28rpx;
+} 

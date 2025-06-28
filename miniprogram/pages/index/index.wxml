@@ -1,0 +1,76 @@
+<!--index.wxml-->
+<view class="container">
+  <!-- 轮播图 -->
+  <swiper class="banner" indicator-dots="{{true}}" autoplay="{{true}}" interval="{{3000}}" duration="{{500}}">
+    <swiper-item wx:for="{{banners}}" wx:key="id">
+      <view class="banner-image" bindtap="onBannerTap" data-id="{{item.id}}">
+        <text class="banner-text">{{item.title}}</text>
+      </view>
+    </swiper-item>
+  </swiper>
+
+  <!-- 功能导航 -->
+  <view class="nav-grid">
+    <view class="nav-item" bindtap="navigateToMall">
+      <view class="nav-icon">🛍️</view>
+      <text class="nav-text">商城购物</text>
+    </view>
+    <view class="nav-item" bindtap="navigateToParking">
+      <view class="nav-icon">🚗</view>
+      <text class="nav-text">停车缴费</text>
+    </view>
+    <view class="nav-item" bindtap="navigateToPoints">
+      <view class="nav-icon">🎁</view>
+      <text class="nav-text">积分中心</text>
+    </view>
+    <view class="nav-item" bindtap="navigateToUser">
+      <view class="nav-icon">👤</view>
+      <text class="nav-text">个人中心</text>
+    </view>
+  </view>
+
+  <!-- 热门商品 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">热门商品</text>
+      <text class="section-more" bindtap="navigateToMall">查看更多</text>
+    </view>
+    <scroll-view class="product-scroll" scroll-x="{{true}}">
+      <view class="product-item" wx:for="{{hotProducts}}" wx:key="id" bindtap="navigateToProduct" data-id="{{item.id}}">
+        <view class="product-image">
+          <text class="product-image-text">{{item.name}}</text>
+        </view>
+        <view class="product-info">
+          <text class="product-name">{{item.name}}</text>
+          <text class="product-price">¥{{item.price}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 商场公告 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">商场公告</text>
+    </view>
+    <view class="notice-list">
+      <view class="notice-item" wx:for="{{notices}}" wx:key="id" bindtap="onNoticeTap" data-id="{{item.id}}">
+        <text class="notice-title">{{item.title}}</text>
+        <text class="notice-time">{{item.time}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 停车状态 -->
+  <view class="parking-status" wx:if="{{parkingInfo}}">
+    <view class="status-header">
+      <text class="status-title">停车状态</text>
+      <text class="status-time">{{parkingInfo.duration}}</text>
+    </view>
+    <view class="status-info">
+      <text class="plate-number">车牌号：{{parkingInfo.plateNumber}}</text>
+      <text class="parking-fee">费用：¥{{parkingInfo.fee}}</text>
+    </view>
+    <button class="btn-primary" bindtap="navigateToParking">立即缴费</button>
+  </view>
+</view> 

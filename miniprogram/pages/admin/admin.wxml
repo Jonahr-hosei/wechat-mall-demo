@@ -1,0 +1,108 @@
+<!--admin.wxml-->
+<view class="container">
+  <!-- 管理员登录 -->
+  <view class="login-section" wx:if="{{!isLoggedIn}}">
+    <view class="login-form">
+      <view class="form-title">管理员登录</view>
+      <view class="input-group">
+        <text class="input-label">用户名</text>
+        <input class="input-field" 
+               placeholder="请输入用户名" 
+               value="{{username}}"
+               bindinput="onUsernameInput"/>
+      </view>
+      <view class="input-group">
+        <text class="input-label">密码</text>
+        <input class="input-field" 
+               type="password"
+               placeholder="请输入密码" 
+               value="{{password}}"
+               bindinput="onPasswordInput"/>
+      </view>
+      <button class="btn-primary login-btn" bindtap="login">登录</button>
+    </view>
+  </view>
+
+  <!-- 管理面板 -->
+  <view class="admin-panel" wx:else>
+    <!-- 顶部导航 -->
+    <view class="admin-header">
+      <text class="admin-title">后台管理</text>
+      <text class="logout-btn" bindtap="logout">退出登录</text>
+    </view>
+
+    <!-- 功能菜单 -->
+    <view class="menu-grid">
+      <view class="menu-item" bindtap="navigateToProductManage">
+        <image src="/images/product-manage.png" class="menu-icon"/>
+        <text class="menu-text">商品管理</text>
+      </view>
+      <view class="menu-item" bindtap="navigateToOrderManage">
+        <image src="/images/order-manage.png" class="menu-icon"/>
+        <text class="menu-text">订单管理</text>
+      </view>
+      <view class="menu-item" bindtap="navigateToUserManage">
+        <image src="/images/user-manage.png" class="menu-icon"/>
+        <text class="menu-text">用户管理</text>
+      </view>
+      <view class="menu-item" bindtap="navigateToParkingManage">
+        <image src="/images/parking-manage.png" class="menu-icon"/>
+        <text class="menu-text">停车管理</text>
+      </view>
+      <view class="menu-item" bindtap="navigateToPointsManage">
+        <image src="/images/points-manage.png" class="menu-icon"/>
+        <text class="menu-text">积分管理</text>
+      </view>
+      <view class="menu-item" bindtap="navigateToStatistics">
+        <image src="/images/statistics.png" class="menu-icon"/>
+        <text class="menu-text">数据统计</text>
+      </view>
+    </view>
+
+    <!-- 数据概览 -->
+    <view class="stats-section">
+      <view class="section-header">
+        <text class="section-title">数据概览</text>
+        <text class="refresh-btn" bindtap="refreshStats">刷新</text>
+      </view>
+      <view class="stats-grid">
+        <view class="stat-item">
+          <text class="stat-number">{{stats.totalUsers}}</text>
+          <text class="stat-label">总用户数</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-number">{{stats.totalOrders}}</text>
+          <text class="stat-label">总订单数</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-number">{{stats.totalRevenue}}</text>
+          <text class="stat-label">总收入(元)</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-number">{{stats.todayOrders}}</text>
+          <text class="stat-label">今日订单</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 最近订单 -->
+    <view class="recent-orders">
+      <view class="section-header">
+        <text class="section-title">最近订单</text>
+        <text class="section-more" bindtap="navigateToOrderManage">查看更多</text>
+      </view>
+      <view class="order-list">
+        <view class="order-item" wx:for="{{recentOrders}}" wx:key="id">
+          <view class="order-info">
+            <text class="order-id">订单号：{{item.orderNo}}</text>
+            <text class="order-time">{{item.createTime}}</text>
+            <text class="order-amount">¥{{item.amount}}</text>
+          </view>
+          <view class="order-status">
+            <text class="status-badge {{item.status}}">{{item.statusText}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view> 

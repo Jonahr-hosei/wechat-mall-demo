@@ -1,0 +1,97 @@
+<!--order-detail.wxml-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 订单详情 -->
+  <view class="order-detail" wx:if="{{!loading && orderInfo}}">
+    <!-- 订单状态 -->
+    <view class="status-section">
+      <view class="status-header">
+        <text class="status-title">订单状态</text>
+        <text class="status-value {{orderInfo.status}}">{{getStatusText(orderInfo.status)}}</text>
+      </view>
+      <view class="status-desc">{{getStatusDesc(orderInfo.status)}}</view>
+    </view>
+
+    <!-- 订单信息 -->
+    <view class="order-info">
+      <view class="section-title">订单信息</view>
+      <view class="info-list">
+        <view class="info-item">
+          <text class="label">订单号：</text>
+          <view class="value-container">
+            <text class="value">{{orderInfo.order_no}}</text>
+            <button class="copy-btn" bindtap="copyOrderNo">复制</button>
+          </view>
+        </view>
+        <view class="info-item">
+          <text class="label">创建时间：</text>
+          <text class="value">{{orderInfo.created_at}}</text>
+        </view>
+        <view class="info-item" wx:if="{{orderInfo.payment_time}}">
+          <text class="label">支付时间：</text>
+          <text class="value">{{orderInfo.payment_time}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">支付方式：</text>
+          <text class="value">{{getPaymentMethodText(orderInfo.payment_method)}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 商品信息 -->
+    <view class="products-section">
+      <view class="section-title">商品信息</view>
+      <view class="product-list">
+        <view class="product-item" wx:for="{{orderInfo.items}}" wx:key="id">
+          <image class="product-image" src="{{item.product_image}}" mode="aspectFill" wx:if="{{item.product_image}}"></image>
+          <view class="no-image" wx:else>
+            <text>暂无图片</text>
+          </view>
+          <view class="product-info">
+            <view class="product-name">{{item.product_name}}</view>
+            <view class="product-price">¥{{item.product_price}}</view>
+            <view class="product-quantity">数量: {{item.quantity}}</view>
+          </view>
+          <view class="product-subtotal">
+            ¥{{item.subtotal}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 金额信息 -->
+    <view class="amount-section">
+      <view class="section-title">金额信息</view>
+      <view class="amount-list">
+        <view class="amount-item">
+          <text class="label">商品总额：</text>
+          <text class="value">¥{{orderInfo.total_amount}}</text>
+        </view>
+        <view class="amount-item">
+          <text class="label">运费：</text>
+          <text class="value">¥0.00</text>
+        </view>
+        <view class="amount-item total">
+          <text class="label">实付金额：</text>
+          <text class="value">¥{{orderInfo.total_amount}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button class="primary-btn" bindtap="contactService">联系客服</button>
+      <button class="secondary-btn" bindtap="goBack">返回</button>
+    </view>
+  </view>
+
+  <!-- 错误状态 -->
+  <view class="error-state" wx:if="{{!loading && !orderInfo}}">
+    <text>订单不存在或已被删除</text>
+    <button class="back-btn" bindtap="goBack">返回</button>
+  </view>
+</view> 

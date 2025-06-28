@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TabBar 图标生成器</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon-container { display: inline-block; margin: 10px; text-align: center; }
+        canvas { border: 1px solid #ccc; margin: 5px; }
+        .download-btn { margin: 5px; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h1>TabBar 图标生成器</h1>
+    <p>点击下载按钮保存图标文件到 images 目录</p>
+    
+    <div id="icons"></div>
+
+    <script>
+        const icons = [
+            { name: 'home', text: '首页', color: '#7A7E83', activeColor: '#3cc51f' },
+            { name: 'mall', text: '商城', color: '#7A7E83', activeColor: '#3cc51f' },
+            { name: 'cart', text: '购物车', color: '#7A7E83', activeColor: '#3cc51f' },
+            { name: 'user', text: '我的', color: '#7A7E83', activeColor: '#3cc51f' }
+        ];
+
+        function drawIcon(canvas, icon, isActive = false) {
+            const ctx = canvas.getContext('2d');
+            const size = 48;
+            
+            // 清空画布
+            ctx.clearRect(0, 0, size, size);
+            
+            // 设置颜色
+            const color = isActive ? icon.activeColor : icon.color;
+            ctx.fillStyle = color;
+            ctx.strokeStyle = color;
+            
+            // 绘制图标
+            ctx.lineWidth = 2;
+            
+            switch(icon.name) {
+                case 'home':
+                    // 房子图标
+                    ctx.beginPath();
+                    ctx.moveTo(24, 8);
+                    ctx.lineTo(36, 18);
+                    ctx.lineTo(36, 36);
+                    ctx.lineTo(12, 36);
+                    ctx.lineTo(12, 18);
+                    ctx.closePath();
+                    ctx.stroke();
+                    // 门
+                    ctx.beginPath();
+                    ctx.moveTo(20, 28);
+                    ctx.lineTo(28, 28);
+                    ctx.lineTo(28, 36);
+                    ctx.lineTo(20, 36);
+                    ctx.closePath();
+                    ctx.stroke();
+                    break;
+                    
+                case 'mall':
+                    // 商店图标
+                    ctx.beginPath();
+                    ctx.moveTo(8, 36);
+                    ctx.lineTo(8, 20);
+                    ctx.lineTo(16, 12);
+                    ctx.lineTo(32, 12);
+                    ctx.lineTo(40, 20);
+                    ctx.lineTo(40, 36);
+                    ctx.stroke();
+                    // 屋顶
+                    ctx.beginPath();
+                    ctx.moveTo(16, 12);
+                    ctx.lineTo(24, 8);
+                    ctx.lineTo(32, 12);
+                    ctx.stroke();
+                    break;
+                    
+                case 'cart':
+                    // 购物车图标
+                    ctx.beginPath();
+                    ctx.moveTo(8, 32);
+                    ctx.lineTo(12, 20);
+                    ctx.lineTo(36, 20);
+                    ctx.lineTo(40, 32);
+                    ctx.stroke();
+                    // 轮子
+                    ctx.beginPath();
+                    ctx.arc(16, 36, 4, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(32, 36, 4, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    break;
+                    
+                case 'user':
+                    // 用户图标
+                    ctx.beginPath();
+                    ctx.arc(24, 16, 8, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(24, 40, 12, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    break;
+            }
+        }
+
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // 生成所有图标
+        icons.forEach(icon => {
+            const container = document.createElement('div');
+            container.className = 'icon-container';
+            
+            // 普通状态图标
+            const canvas1 = document.createElement('canvas');
+            canvas1.width = 48;
+            canvas1.height = 48;
+            drawIcon(canvas1, icon, false);
+            
+            const btn1 = document.createElement('button');
+            btn1.className = 'download-btn';
+            btn1.textContent = `下载 ${icon.name}.png`;
+            btn1.onclick = () => downloadCanvas(canvas1, `${icon.name}.png`);
+            
+            // 激活状态图标
+            const canvas2 = document.createElement('canvas');
+            canvas2.width = 48;
+            canvas2.height = 48;
+            drawIcon(canvas2, icon, true);
+            
+            const btn2 = document.createElement('button');
+            btn2.className = 'download-btn';
+            btn2.textContent = `下载 ${icon.name}-active.png`;
+            btn2.onclick = () => downloadCanvas(canvas2, `${icon.name}-active.png`);
+            
+            container.appendChild(canvas1);
+            container.appendChild(btn1);
+            container.appendChild(document.createElement('br'));
+            container.appendChild(canvas2);
+            container.appendChild(btn2);
+            
+            document.getElementById('icons').appendChild(container);
+        });
+    </script>
+</body>
+</html> 

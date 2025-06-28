@@ -1,0 +1,326 @@
+/**parking.wxss**/
+.container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* 停车状态卡片 */
+.parking-status {
+  background-color: white;
+  margin: 20rpx;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  width: calc(100% - 40rpx);
+  box-sizing: border-box;
+}
+
+.status-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.status-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.status-icon.parking {
+  background-color: #e8f5e8;
+  color: #3cc51f;
+}
+
+.status-icon.not-parking {
+  background-color: #f0f0f0;
+  color: #999;
+}
+
+.status-text {
+  flex: 1;
+  word-wrap: break-word;
+}
+
+.status-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.status-desc {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 停车信息 */
+.parking-info {
+  background-color: #f8f8f8;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  font-size: 28rpx;
+  color: #666;
+  word-wrap: break-word;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: bold;
+  text-align: right;
+  word-wrap: break-word;
+  margin-left: 20rpx;
+}
+
+.parking-fee {
+  color: #e74c3c;
+  font-size: 36rpx;
+}
+
+/* 车牌绑定 */
+.plate-binding {
+  background-color: white;
+  margin: 20rpx;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  width: calc(100% - 40rpx);
+  box-sizing: border-box;
+}
+
+.binding-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.plate-input {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.plate-input input {
+  flex: 1;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  padding: 20rpx;
+  font-size: 28rpx;
+  margin-right: 20rpx;
+  box-sizing: border-box;
+}
+
+.bind-btn {
+  background-color: #3cc51f;
+  color: white;
+  border: none;
+  border-radius: 8rpx;
+  padding: 20rpx 30rpx;
+  font-size: 28rpx;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 停车记录 */
+.parking-records {
+  background-color: white;
+  margin: 20rpx;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  width: calc(100% - 40rpx);
+  box-sizing: border-box;
+}
+
+.records-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.record-item {
+  border-bottom: 1rpx solid #f0f0f0;
+  padding: 20rpx 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.record-item:last-child {
+  border-bottom: none;
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.record-time {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: bold;
+  word-wrap: break-word;
+}
+
+.record-status {
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.record-status.completed {
+  background-color: #e8f5e8;
+  color: #3cc51f;
+}
+
+.record-status.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.record-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+}
+
+.record-plate {
+  font-size: 28rpx;
+  color: #666;
+  word-wrap: break-word;
+}
+
+.record-fee {
+  font-size: 32rpx;
+  color: #e74c3c;
+  font-weight: bold;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 30rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btn-primary {
+  flex: 1;
+  background-color: #3cc51f;
+  color: white;
+  border: none;
+  border-radius: 8rpx;
+  padding: 25rpx;
+  font-size: 32rpx;
+  text-align: center;
+}
+
+.btn-secondary {
+  flex: 1;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  padding: 25rpx;
+  font-size: 32rpx;
+  text-align: center;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 100rpx 40rpx;
+  color: #999;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  margin-bottom: 10rpx;
+}
+
+.empty-desc {
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 响应式适配 */
+@media screen and (max-width: 750rpx) {
+  .plate-input {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .plate-input input {
+    margin-right: 0;
+    margin-bottom: 20rpx;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .record-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10rpx;
+  }
+  
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5rpx;
+  }
+} 

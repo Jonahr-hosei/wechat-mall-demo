@@ -1,0 +1,81 @@
+<!--payment.wxml-->
+<view class="container">
+  <!-- 支付倒计时 -->
+  <view class="countdown-section">
+    <view class="countdown-title">支付剩余时间</view>
+    <view class="countdown-time">{{formatTime(remainingTime)}}</view>
+    <view class="countdown-tip">请在15分钟内完成支付，超时订单将自动取消</view>
+  </view>
+
+  <!-- 订单信息 -->
+  <view class="order-info">
+    <view class="order-header">
+      <text class="order-title">订单信息</text>
+    </view>
+    <view class="order-details">
+      <view class="order-item">
+        <text class="label">订单号：</text>
+        <text class="value">{{orderNo}}</text>
+      </view>
+      <view class="order-item">
+        <text class="label">支付金额：</text>
+        <text class="value amount">¥{{amount}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 支付方式 -->
+  <view class="payment-methods">
+    <view class="section-title">选择支付方式</view>
+    
+    <view class="method-item {{paymentMethod === 'wechat' ? 'selected' : ''}}" 
+          bindtap="selectPaymentMethod" 
+          data-method="wechat">
+      <view class="method-info">
+        <image class="method-icon" src="/images/wechat-pay.png" mode="aspectFit"></image>
+        <view class="method-details">
+          <text class="method-name">微信支付</text>
+          <text class="method-desc">推荐使用微信支付</text>
+        </view>
+      </view>
+      <view class="method-check">
+        <icon type="success" size="20" color="{{paymentMethod === 'wechat' ? '#07c160' : '#ddd'}}"></icon>
+      </view>
+    </view>
+
+    <view class="method-item {{paymentMethod === 'alipay' ? 'selected' : ''}}" 
+          bindtap="selectPaymentMethod" 
+          data-method="alipay">
+      <view class="method-info">
+        <image class="method-icon" src="/images/alipay.png" mode="aspectFit"></image>
+        <view class="method-details">
+          <text class="method-name">支付宝</text>
+          <text class="method-desc">使用支付宝支付</text>
+        </view>
+      </view>
+      <view class="method-check">
+        <icon type="success" size="20" color="{{paymentMethod === 'alipay' ? '#07c160' : '#ddd'}}"></icon>
+      </view>
+    </view>
+  </view>
+
+  <!-- 支付按钮 -->
+  <view class="payment-actions">
+    <button class="pay-btn" bindtap="confirmPayment" loading="{{loading}}">
+      立即支付 ¥{{amount}}
+    </button>
+    <button class="cancel-btn" bindtap="cancelPayment">取消支付</button>
+  </view>
+
+  <!-- 底部提示 -->
+  <view class="bottom-tips">
+    <view class="tip-item">
+      <icon type="info" size="16" color="#999"></icon>
+      <text>支付完成后，订单将自动确认</text>
+    </view>
+    <view class="tip-item">
+      <icon type="info" size="16" color="#999"></icon>
+      <text>如有问题，请联系客服</text>
+    </view>
+  </view>
+</view> 

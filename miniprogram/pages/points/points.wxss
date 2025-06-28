@@ -1,0 +1,357 @@
+/**points.wxss**/
+.container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* 积分头部 */
+.points-header {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  padding: 60rpx 40rpx 40rpx;
+  color: white;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.points-balance {
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.balance-label {
+  font-size: 28rpx;
+  opacity: 0.9;
+  margin-bottom: 10rpx;
+}
+
+.balance-amount {
+  font-size: 72rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.balance-desc {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.points-actions {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  padding: 0 10rpx;
+  box-sizing: border-box;
+}
+
+.action-icon {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  margin-bottom: 10rpx;
+  flex-shrink: 0;
+}
+
+.action-text {
+  font-size: 24rpx;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+/* 积分任务 */
+.points-tasks {
+  background-color: white;
+  margin: 20rpx;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  width: calc(100% - 40rpx);
+  box-sizing: border-box;
+}
+
+.tasks-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30rpx;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.task-item:last-child {
+  border-bottom: none;
+}
+
+.task-icon {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.task-content {
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+}
+
+.task-name {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+  word-wrap: break-word;
+}
+
+.task-desc {
+  font-size: 24rpx;
+  color: #999;
+  word-wrap: break-word;
+}
+
+.task-points {
+  font-size: 28rpx;
+  color: #ff6b35;
+  font-weight: bold;
+  margin-left: 20rpx;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.task-btn {
+  background-color: #ff6b35;
+  color: white;
+  border: none;
+  border-radius: 20rpx;
+  padding: 10rpx 20rpx;
+  font-size: 24rpx;
+  margin-left: 20rpx;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.task-btn.completed {
+  background-color: #3cc51f;
+}
+
+.task-btn.disabled {
+  background-color: #ccc;
+}
+
+/* 积分兑换 */
+.points-exchange {
+  background-color: white;
+  margin: 20rpx;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  width: calc(100% - 40rpx);
+  box-sizing: border-box;
+}
+
+.exchange-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30rpx;
+}
+
+.exchange-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250rpx, 1fr));
+  gap: 20rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.exchange-item {
+  background-color: #f8f8f8;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.exchange-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  margin: 0 auto 15rpx;
+  color: white;
+}
+
+.exchange-name {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 10rpx;
+  word-wrap: break-word;
+}
+
+.exchange-points {
+  font-size: 24rpx;
+  color: #ff6b35;
+  font-weight: bold;
+}
+
+/* 积分明细 */
+.points-details {
+  background-color: white;
+  margin: 20rpx;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  width: calc(100% - 40rpx);
+  box-sizing: border-box;
+}
+
+.details-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30rpx;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-info {
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+}
+
+.detail-name {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+  word-wrap: break-word;
+}
+
+.detail-time {
+  font-size: 24rpx;
+  color: #999;
+  word-wrap: break-word;
+}
+
+.detail-points {
+  font-size: 28rpx;
+  font-weight: bold;
+  margin-left: 20rpx;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.detail-points.income {
+  color: #3cc51f;
+}
+
+.detail-points.expense {
+  color: #e74c3c;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 100rpx 40rpx;
+  color: #999;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  margin-bottom: 10rpx;
+}
+
+.empty-desc {
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 响应式适配 */
+@media screen and (max-width: 750rpx) {
+  .points-actions {
+    flex-wrap: wrap;
+    gap: 20rpx;
+  }
+  
+  .action-item {
+    flex-basis: 50%;
+  }
+  
+  .exchange-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .task-item {
+    flex-wrap: wrap;
+    gap: 10rpx;
+  }
+  
+  .task-content {
+    flex-basis: 100%;
+  }
+  
+  .task-points, .task-btn {
+    margin-left: 0;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10rpx;
+  }
+  
+  .detail-points {
+    margin-left: 0;
+  }
+} 

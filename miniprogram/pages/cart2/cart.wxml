@@ -1,0 +1,55 @@
+<!--cart2.wxml-->
+<view class="container">
+  <!-- 购物车为空 -->
+  <view class="empty-cart" wx:if="{{cartItems.length === 0}}">
+    <view class="empty-image">🛒</view>
+    <text class="empty-text">购物车是空的</text>
+    <text class="empty-desc">快去挑选心仪的商品吧</text>
+    <button class="btn-primary" bindtap="navigateToMall">去购物</button>
+  </view>
+
+  <!-- 购物车列表 -->
+  <view class="cart-content" wx:else>
+    <!-- 商品列表 -->
+    <view class="cart-list">
+      <view class="cart-item" wx:for="{{cartItems}}" wx:key="id">
+        <view class="item-checkbox">
+          <checkbox checked="{{item.selected}}" bindtap="toggleSelect" data-id="{{item.id}}"/>
+        </view>
+        <view class="item-image">
+          <text class="item-image-text">{{item.name}}</text>
+        </view>
+        <view class="item-info">
+          <text class="item-name">{{item.name}}</text>
+          <text class="item-spec" wx:if="{{item.specifications}}">{{item.specifications}}</text>
+          <view class="item-price-row">
+            <text class="item-price">¥{{item.price}}</text>
+            <view class="quantity-control">
+              <text class="quantity-btn" bindtap="decreaseQuantity" data-id="{{item.id}}">-</text>
+              <text class="quantity-number">{{item.quantity}}</text>
+              <text class="quantity-btn" bindtap="increaseQuantity" data-id="{{item.id}}">+</text>
+            </view>
+          </view>
+        </view>
+        <view class="item-delete" bindtap="removeItem" data-id="{{item.id}}">
+          <text class="delete-btn">删除</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部结算栏 -->
+    <view class="checkout-bar">
+      <view class="select-all">
+        <checkbox checked="{{selectAll}}" bindtap="toggleSelectAll"/>
+        <text class="select-text">全选</text>
+      </view>
+      <view class="total-info">
+        <text class="total-text">合计：</text>
+        <text class="total-price">¥{{totalPrice}}</text>
+      </view>
+      <button class="btn-primary checkout-btn" bindtap="checkout" disabled="{{selectedCount === 0}}">
+        结算({{selectedCount}})
+      </button>
+    </view>
+  </view>
+</view> 

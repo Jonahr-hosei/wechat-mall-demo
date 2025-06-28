@@ -1,0 +1,111 @@
+<!--parking.wxml-->
+<view class="container">
+  <!-- 停车状态卡片 -->
+  <view class="parking-status-card" wx:if="{{parkingInfo}}">
+    <view class="status-header">
+      <text class="status-title">当前停车状态</text>
+      <text class="status-time">{{parkingInfo.duration}}</text>
+    </view>
+    <view class="status-details">
+      <view class="detail-item">
+        <text class="label">车牌号码</text>
+        <text class="value">{{parkingInfo.plateNumber}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">入场时间</text>
+        <text class="value">{{parkingInfo.entryTime}}</text>
+      </view>
+      <view class="detail-item">
+        <text class="label">停车费用</text>
+        <text class="value fee">¥{{parkingInfo.fee}}</text>
+      </view>
+    </view>
+    <button class="btn-primary pay-btn" bindtap="payParkingFee">立即缴费</button>
+  </view>
+
+  <!-- 无停车记录 -->
+  <view class="no-parking" wx:else>
+    <image src="/images/no-parking.png" class="no-parking-image"/>
+    <text class="no-parking-text">暂无停车记录</text>
+    <text class="no-parking-desc">车辆入场后会自动显示停车信息</text>
+  </view>
+
+  <!-- 车牌绑定 -->
+  <view class="bind-plate-section">
+    <view class="section-header">
+      <text class="section-title">车牌绑定</text>
+    </view>
+    <view class="plate-list">
+      <view class="plate-item" wx:for="{{plateList}}" wx:key="id">
+        <view class="plate-info">
+          <text class="plate-number">{{item.plateNumber}}</text>
+          <text class="plate-type">{{item.type}}</text>
+        </view>
+        <view class="plate-actions">
+          <text class="action-btn {{item.isDefault ? 'default' : ''}}" 
+                bindtap="setDefaultPlate" 
+                data-id="{{item.id}}">
+            {{item.isDefault ? '默认' : '设为默认'}}
+          </text>
+          <text class="action-btn delete" bindtap="deletePlate" data-id="{{item.id}}">删除</text>
+        </view>
+      </view>
+    </view>
+    <button class="btn-secondary add-plate-btn" bindtap="showAddPlateModal">添加车牌</button>
+  </view>
+
+  <!-- 停车记录 -->
+  <view class="parking-history-section">
+    <view class="section-header">
+      <text class="section-title">停车记录</text>
+      <text class="section-more" bindtap="viewAllHistory">查看更多</text>
+    </view>
+    <view class="history-list">
+      <view class="history-item" wx:for="{{parkingHistory}}" wx:key="id">
+        <view class="history-info">
+          <text class="plate-number">{{item.plateNumber}}</text>
+          <text class="parking-time">{{item.entryTime}} - {{item.exitTime}}</text>
+          <text class="parking-duration">停车时长：{{item.duration}}</text>
+        </view>
+        <view class="history-fee">
+          <text class="fee-amount">¥{{item.fee}}</text>
+          <text class="fee-status {{item.status === 'paid' ? 'paid' : 'unpaid'}}">
+            {{item.status === 'paid' ? '已缴费' : '未缴费'}}
+          </text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加车牌弹窗 -->
+  <view class="modal" wx:if="{{showAddPlateModal}}">
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">添加车牌</text>
+        <text class="modal-close" bindtap="hideAddPlateModal">×</text>
+      </view>
+      <view class="modal-body">
+        <view class="input-group">
+          <text class="input-label">车牌号码</text>
+          <input class="input-field" 
+                 placeholder="请输入车牌号码" 
+                 value="{{newPlateNumber}}"
+                 bindinput="onPlateNumberInput"/>
+        </view>
+        <view class="input-group">
+          <text class="input-label">车辆类型</text>
+          <picker class="picker" 
+                  range="{{vehicleTypes}}" 
+                  value="{{selectedVehicleType}}"
+                  bindchange="onVehicleTypeChange">
+            <view class="picker-text">{{vehicleTypes[selectedVehicleType]}}</view>
+          </picker>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="hideAddPlateModal">取消</button>
+        <button class="btn-primary" bindtap="addPlate">确定</button>
+      </view>
+    </view>
+  </view>
+</view> 
