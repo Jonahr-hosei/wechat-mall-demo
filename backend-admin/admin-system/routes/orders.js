@@ -248,6 +248,65 @@ router.put('/:id/status', async (req, res) => {
   }
 });
 
+// 取消订单
+router.post('/:id/cancel', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 检查订单状态
+    const { data: order, error: fetchError } = await supabase
+      .from('orders')
+      .select('status, total_amount')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !order) {
+      return res.status(404).json({
+        success: false,
+        message: '订单不存在'
+      });
+    }
+
+    if (order.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: '只能取消待支付的订单'
+      });
+    }
+
+    // 更新订单状态
+    const { data: updatedOrder, error } = await supabase
+      .from('orders')
+      .update({
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('status', 'pending')
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase取消订单错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '订单取消失败'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '订单取消成功'
+    });
+  } catch (error) {
+    console.error('取消订单错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
 // 删除订单
 router.delete('/:id', async (req, res) => {
   try {

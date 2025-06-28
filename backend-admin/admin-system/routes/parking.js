@@ -3,8 +3,8 @@ const supabase = require('../config/database');
 
 const router = express.Router();
 
-// 获取停车记录列表
-router.get('/', async (req, res) => {
+// 获取停车记录列表 (兼容前端调用)
+router.get('/records', async (req, res) => {
   try {
     const { page = 1, limit = 10, user_id, status } = req.query;
     const offset = (page - 1) * limit;
@@ -81,53 +81,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 创建停车记录
-router.post('/', async (req, res) => {
-  try {
-    const { user_id, plate_number } = req.body;
-
-    if (!user_id || !plate_number) {
-      return res.status(400).json({
-        success: false,
-        message: '用户ID和车牌号不能为空'
-      });
-    }
-
-    const { data, error } = await supabase
-      .from('parking_records')
-      .insert([{
-        user_id: parseInt(user_id),
-        plate_number,
-        entry_time: new Date().toISOString(),
-        status: 'parking'
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase插入错误:', error);
-      return res.status(500).json({
-        success: false,
-        message: '停车记录创建失败'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: '停车记录创建成功',
-      data: { id: data.id }
-    });
-  } catch (error) {
-    console.error('创建停车记录错误:', error);
-    res.status(500).json({
-      success: false,
-      message: '服务器错误'
-    });
-  }
-});
-
-// 更新停车记录（出场）
-router.put('/:id/exit', async (req, res) => {
+// 结束停车记录 (兼容前端调用)
+router.post('/records/:id/end', async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -182,6 +137,89 @@ router.put('/:id/exit', async (req, res) => {
     });
   } catch (error) {
     console.error('更新停车记录错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 支付停车费 (兼容前端调用)
+router.post('/records/:id/pay', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { payment_method } = req.body;
+
+    const { data: updatedRecord, error } = await supabase
+      .from('parking_records')
+      .update({
+        payment_time: new Date().toISOString(),
+        payment_method: payment_method || 'online'
+      })
+      .eq('id', id)
+      .eq('status', 'completed')
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase支付更新错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '支付失败'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '支付成功'
+    });
+  } catch (error) {
+    console.error('支付停车费错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 创建停车记录
+router.post('/', async (req, res) => {
+  try {
+    const { user_id, plate_number } = req.body;
+
+    if (!user_id || !plate_number) {
+      return res.status(400).json({
+        success: false,
+        message: '用户ID和车牌号不能为空'
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('parking_records')
+      .insert([{
+        user_id: parseInt(user_id),
+        plate_number,
+        entry_time: new Date().toISOString(),
+        status: 'parking'
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase插入错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '停车记录创建失败'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '停车记录创建成功',
+      data: { id: data.id }
+    });
+  } catch (error) {
+    console.error('创建停车记录错误:', error);
     res.status(500).json({
       success: false,
       message: '服务器错误'

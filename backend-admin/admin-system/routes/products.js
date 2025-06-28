@@ -318,6 +318,44 @@ router.delete('/:id', async (req, res) => {
 });
 
 // 批量删除商品
+router.post('/batch-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '请选择要删除的商品'
+      });
+    }
+
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .in('id', ids);
+
+    if (error) {
+      console.error('Supabase批量删除错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '批量删除失败'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `成功删除 ${ids.length} 个商品`
+    });
+  } catch (error) {
+    console.error('批量删除商品错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 批量删除商品 (DELETE方法，保持兼容性)
 router.delete('/', async (req, res) => {
   try {
     const { ids } = req.body;

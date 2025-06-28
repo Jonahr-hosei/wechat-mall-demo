@@ -176,4 +176,79 @@ router.get('/statistics', async (req, res) => {
   }
 });
 
+// 调整用户积分
+router.post('/adjust', async (req, res) => {
+  try {
+    const { user_id, points, type, description } = req.body;
+
+    if (!user_id || !points || !type || !description) {
+      return res.status(400).json({
+        success: false,
+        message: '参数不完整'
+      });
+    }
+
+    // 先获取用户当前积分
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('points')
+      .eq('id', user_id)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在'
+      });
+    }
+
+    const newPoints = (user.points || 0) + parseInt(points);
+    
+    // 更新用户积分
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ points: newPoints })
+      .eq('id', user_id);
+
+    if (updateError) {
+      console.error('Supabase积分更新错误:', updateError);
+      return res.status(500).json({
+        success: false,
+        message: '积分调整失败'
+      });
+    }
+
+    // 记录积分变动
+    const { error: recordError } = await supabase
+      .from('point_records')
+      .insert([{
+        user_id: parseInt(user_id),
+        type,
+        points: parseInt(points),
+        description
+      }]);
+
+    if (recordError) {
+      console.error('Supabase积分记录错误:', recordError);
+      // 积分记录失败不影响积分调整成功
+    }
+
+    res.json({
+      success: true,
+      message: '积分调整成功'
+    });
+  } catch (error) {
+    console.error('积分调整错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 获取积分记录
+router.get('/records', async (req, res) => {
+
+});
+
 module.exports = router; 
