@@ -162,7 +162,7 @@ router.get('/today', async (req, res) => {
 });
 
 // 获取订单状态统计
-router.get('/orders/status', async (req, res) => {
+router.get('/orders-status', async (req, res) => {
   try {
     // 获取各状态订单数量
     const statuses = ['pending', 'processing', 'completed', 'cancelled'];
@@ -196,7 +196,7 @@ router.get('/orders/status', async (req, res) => {
 });
 
 // 获取商品分类统计
-router.get('/products/categories', async (req, res) => {
+router.get('/products-categories', async (req, res) => {
   try {
     // 获取所有分类
     const { data: categories, error: categoriesError } = await supabase
@@ -249,17 +249,18 @@ router.get('/products/categories', async (req, res) => {
 });
 
 // 获取销售趋势（最近7天）
-router.get('/sales/trend', async (req, res) => {
+router.get('/sales-trend', async (req, res) => {
   try {
+    const { days = 7 } = req.query;
     const today = new Date();
-    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startDate = new Date(today.getTime() - parseInt(days) * 24 * 60 * 60 * 1000);
 
     // 获取最近7天的订单
     const { data: orders, error } = await supabase
       .from('orders')
       .select('total_amount, created_at')
       .eq('status', 'completed')
-      .gte('created_at', sevenDaysAgo.toISOString())
+      .gte('created_at', startDate.toISOString())
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -272,7 +273,7 @@ router.get('/sales/trend', async (req, res) => {
 
     // 按日期分组计算收入
     const dailySales = {};
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < parseInt(days); i++) {
       const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
       const dateStr = date.toISOString().split('T')[0];
       dailySales[dateStr] = 0;

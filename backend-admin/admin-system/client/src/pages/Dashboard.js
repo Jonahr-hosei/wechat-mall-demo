@@ -17,6 +17,7 @@ const Dashboard = () => {
   const [salesTrend, setSalesTrend] = useState([]);
   const [productRanking, setProductRanking] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -24,6 +25,7 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
+      setError(null);
       const [overviewRes, salesRes, rankingRes] = await Promise.all([
         axios.get('/api/statistics/overview'),
         axios.get('/api/statistics/sales-trend?days=7'),
@@ -35,6 +37,7 @@ const Dashboard = () => {
       setProductRanking(rankingRes.data.data);
     } catch (error) {
       console.error('获取数据失败:', error);
+      setError('数据加载失败，请检查网络连接或联系管理员');
     } finally {
       setLoading(false);
     }
@@ -69,6 +72,19 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <h2>仪表盘</h2>
+      
+      {error && (
+        <div style={{ 
+          marginBottom: 16, 
+          padding: 16, 
+          backgroundColor: '#fff2f0', 
+          border: '1px solid #ffccc7', 
+          borderRadius: 6,
+          color: '#cf1322'
+        }}>
+          <strong>错误:</strong> {error}
+        </div>
+      )}
       
       {/* 统计卡片 */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
