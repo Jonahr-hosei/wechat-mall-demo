@@ -71,11 +71,7 @@ const Products = () => {
       });
       
       if (response.data.success) {
-        const productsWithImages = response.data.data.map(product => ({
-          ...product,
-          image: product.image ? `http://localhost:5000${product.image}` : null
-        }));
-        setProducts(productsWithImages);
+        setProducts(response.data.data);
         setPagination(prev => ({
           ...prev,
           total: response.data.pagination.total
@@ -127,11 +123,7 @@ const Products = () => {
     setEditingProduct(product);
     setModalVisible(true);
     if (product) {
-      const productData = {
-        ...product,
-        image: product.image ? product.image.replace('http://localhost:5000', '') : null
-      };
-      form.setFieldsValue(productData);
+      form.setFieldsValue(product);
     } else {
       form.resetFields();
     }
