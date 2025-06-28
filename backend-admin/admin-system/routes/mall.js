@@ -271,18 +271,29 @@ router.post('/orders/:id/pay', async (req, res) => {
       if (!orderError && order) {
         const points = Math.floor(order.total_amount);
         if (points > 0) {
-          // 更新用户积分
-          await supabase
+          // 先获取用户当前积分
+          const { data: user, error: userError } = await supabase
             .from('users')
-            .update({ points: supabase.raw(`points + ${points}`) })
-            .eq('id', order.user_id);
+            .select('points')
+            .eq('id', order.user_id)
+            .single();
 
-          // 记录积分
-          await supabase
-            .from('point_records')
-            .insert([
-              { user_id: order.user_id, type: 'purchase', points, description: '购物获得积分' }
-            ]);
+          if (!userError && user) {
+            const newPoints = (user.points || 0) + points;
+            
+            // 更新用户积分
+            await supabase
+              .from('users')
+              .update({ points: newPoints })
+              .eq('id', order.user_id);
+
+            // 记录积分
+            await supabase
+              .from('point_records')
+              .insert([
+                { user_id: order.user_id, type: 'purchase', points, description: '购物获得积分' }
+              ]);
+          }
         }
       }
     } catch (pointsError) {

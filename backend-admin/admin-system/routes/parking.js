@@ -1,241 +1,272 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const supabase = require('../config/database');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../database/mall.db');
-const db = new sqlite3.Database(dbPath);
 
 // 获取停车记录列表
-router.get('/records', (req, res) => {
-  const { page = 1, limit = 10, status, search } = req.query;
-  const offset = (page - 1) * limit;
+router.get('/', async (req, res) => {
+  try {
+    const { page = 1, limit = 10, user_id, status } = req.query;
+    const offset = (page - 1) * limit;
 
-  let whereClause = 'WHERE 1=1';
-  let params = [];
+    let query = supabase
+      .from('parking_records')
+      .select(`
+        *,
+        users(username, phone)
+      `);
 
-  if (status) {
-    whereClause += ' AND pr.status = ?';
-    params.push(status);
-  }
+    // 添加过滤条件
+    if (user_id) {
+      query = query.eq('user_id', user_id);
+    }
 
-  if (search) {
-    whereClause += ' AND (pr.plate_number LIKE ? OR u.nickname LIKE ?)';
-    params.push(`%${search}%`, `%${search}%`);
-  }
+    if (status) {
+      query = query.eq('status', status);
+    }
 
-  const query = `
-    SELECT pr.*, u.nickname
-    FROM parking_records pr
-    LEFT JOIN users u ON pr.user_id = u.id
-    ${whereClause}
-    ORDER BY pr.created_at DESC
-    LIMIT ? OFFSET ?
-  `;
+    // 添加排序和分页
+    query = query.order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-  const countQuery = `
-    SELECT COUNT(*) as total
-    FROM parking_records pr
-    LEFT JOIN users u ON pr.user_id = u.id
-    ${whereClause}
-  `;
+    const { data: records, error } = await query;
 
-  db.get(countQuery, params, (err, countResult) => {
-    if (err) {
+    if (error) {
+      console.error('Supabase查询错误:', error);
       return res.status(500).json({
         success: false,
         message: '数据库错误'
       });
     }
 
-    db.all(query, [...params, limit, offset], (err, records) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: '数据库错误'
-        });
-      }
+    // 获取总数
+    let countQuery = supabase
+      .from('parking_records')
+      .select('*', { count: 'exact', head: true });
 
-      res.json({
-        success: true,
-        data: records,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total: countResult.total,
-          pages: Math.ceil(countResult.total / limit)
-        }
+    if (user_id) {
+      countQuery = countQuery.eq('user_id', user_id);
+    }
+
+    if (status) {
+      countQuery = countQuery.eq('status', status);
+    }
+
+    const { count: total, error: countError } = await countQuery;
+
+    if (countError) {
+      console.error('Supabase计数错误:', countError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
       });
+    }
+
+    res.json({
+      success: true,
+      data: records,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: total || 0,
+        pages: Math.ceil((total || 0) / limit)
+      }
     });
-  });
+  } catch (error) {
+    console.error('获取停车记录错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
-// 获取停车记录详情
-router.get('/records/:id', (req, res) => {
-  const { id } = req.params;
+// 创建停车记录
+router.post('/', async (req, res) => {
+  try {
+    const { user_id, plate_number } = req.body;
 
-  db.get(
-    `SELECT pr.*, u.nickname, u.phone
-     FROM parking_records pr
-     LEFT JOIN users u ON pr.user_id = u.id
-     WHERE pr.id = ?`,
-    [id],
-    (err, record) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: '数据库错误'
-        });
-      }
-
-      if (!record) {
-        return res.status(404).json({
-          success: false,
-          message: '停车记录不存在'
-        });
-      }
-
-      res.json({
-        success: true,
-        data: record
+    if (!user_id || !plate_number) {
+      return res.status(400).json({
+        success: false,
+        message: '用户ID和车牌号不能为空'
       });
     }
-  );
-});
 
-// 手动结束停车
-router.post('/records/:id/end', (req, res) => {
-  const { id } = req.params;
+    const { data, error } = await supabase
+      .from('parking_records')
+      .insert([{
+        user_id: parseInt(user_id),
+        plate_number,
+        entry_time: new Date().toISOString(),
+        status: 'parking'
+      }])
+      .select()
+      .single();
 
-  db.get('SELECT * FROM parking_records WHERE id = ? AND status = "parking"', [id], (err, record) => {
-    if (err) {
+    if (error) {
+      console.error('Supabase插入错误:', error);
       return res.status(500).json({
         success: false,
-        message: '数据库错误'
+        message: '停车记录创建失败'
       });
     }
 
-    if (!record) {
+    res.json({
+      success: true,
+      message: '停车记录创建成功',
+      data: { id: data.id }
+    });
+  } catch (error) {
+    console.error('创建停车记录错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 更新停车记录（出场）
+router.put('/:id/exit', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 获取入场时间
+    const { data: record, error: fetchError } = await supabase
+      .from('parking_records')
+      .select('entry_time')
+      .eq('id', id)
+      .eq('status', 'parking')
+      .single();
+
+    if (fetchError || !record) {
       return res.status(404).json({
         success: false,
-        message: '停车记录不存在或已结束'
+        message: '停车记录不存在或已完成'
       });
     }
 
-    const exit_time = new Date();
-    const duration_minutes = Math.floor((exit_time - new Date(record.entry_time)) / (1000 * 60));
-    const fee = calculateParkingFee(duration_minutes);
+    const exitTime = new Date();
+    const entryTime = new Date(record.entry_time);
+    const durationMinutes = Math.floor((exitTime - entryTime) / (1000 * 60));
+    const fee = Math.max(1, durationMinutes * 2); // 每小时2元，最少1元
 
-    db.run(
-      `UPDATE parking_records 
-       SET exit_time = ?, duration_minutes = ?, fee = ?, status = 'completed', updated_at = CURRENT_TIMESTAMP 
-       WHERE id = ?`,
-      [exit_time.toISOString(), duration_minutes, fee, id],
-      function(err) {
-        if (err) {
-          return res.status(500).json({
-            success: false,
-            message: '结束停车失败'
-          });
-        }
+    const { data: updatedRecord, error } = await supabase
+      .from('parking_records')
+      .update({
+        exit_time: exitTime.toISOString(),
+        duration_minutes: durationMinutes,
+        fee: fee,
+        status: 'completed'
+      })
+      .eq('id', id)
+      .eq('status', 'parking')
+      .select()
+      .single();
 
-        res.json({
-          success: true,
-          message: '停车结束成功',
-          data: {
-            duration_minutes,
-            fee
-          }
-        });
-      }
-    );
-  });
-});
-
-// 手动支付停车费
-router.post('/records/:id/pay', (req, res) => {
-  const { id } = req.params;
-  const { payment_method } = req.body;
-
-  db.run(
-    `UPDATE parking_records 
-     SET payment_time = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
-     WHERE id = ?`,
-    [id],
-    function(err) {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: '支付失败'
-        });
-      }
-
-      if (this.changes === 0) {
-        return res.status(404).json({
-          success: false,
-          message: '停车记录不存在'
-        });
-      }
-
-      res.json({
-        success: true,
-        message: '支付成功'
+    if (error) {
+      console.error('Supabase更新错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '停车记录更新失败'
       });
     }
-  );
+
+    res.json({
+      success: true,
+      message: '停车记录更新成功',
+      data: {
+        duration_minutes: durationMinutes,
+        fee: fee
+      }
+    });
+  } catch (error) {
+    console.error('更新停车记录错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
 // 获取停车统计
-router.get('/statistics', (req, res) => {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const queries = [
-    'SELECT COUNT(*) as total_records FROM parking_records',
-    'SELECT COUNT(*) as today_records FROM parking_records WHERE DATE(created_at) = ?',
-    'SELECT COUNT(*) as parking_now FROM parking_records WHERE status = "parking"',
-    'SELECT SUM(fee) as total_revenue FROM parking_records WHERE status = "completed"',
-    'SELECT SUM(fee) as today_revenue FROM parking_records WHERE status = "completed" AND DATE(exit_time) = ?'
-  ];
+router.get('/statistics', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
 
-  Promise.all(queries.map(query => {
-    return new Promise((resolve, reject) => {
-      db.get(query, query.includes('DATE') ? [today] : [], (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
+    // 获取总停车记录数
+    const { count: total, error: totalError } = await supabase
+      .from('parking_records')
+      .select('*', { count: 'exact', head: true });
+
+    if (totalError) {
+      console.error('Supabase总记录数查询错误:', totalError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
       });
-    });
-  }))
-  .then(results => {
-    const [totalRecords, todayRecords, parkingNow, totalRevenue, todayRevenue] = results;
+    }
+
+    // 获取今日停车记录数
+    const { count: todayCount, error: todayError } = await supabase
+      .from('parking_records')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today);
+
+    if (todayError) {
+      console.error('Supabase今日记录数查询错误:', todayError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    // 获取当前停车中的车辆数
+    const { count: parkingCount, error: parkingError } = await supabase
+      .from('parking_records')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'parking');
+
+    if (parkingError) {
+      console.error('Supabase停车中车辆数查询错误:', parkingError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    // 获取总收入
+    const { data: completedRecords, error: incomeError } = await supabase
+      .from('parking_records')
+      .select('fee')
+      .eq('status', 'completed');
+
+    if (incomeError) {
+      console.error('Supabase收入查询错误:', incomeError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    const totalIncome = completedRecords.reduce((sum, record) => sum + (record.fee || 0), 0);
+
     res.json({
       success: true,
       data: {
-        totalRecords: totalRecords.total_records,
-        todayRecords: todayRecords.today_records,
-        parkingNow: parkingNow.parking_now,
-        totalRevenue: totalRevenue.total_revenue || 0,
-        todayRevenue: todayRevenue.today_revenue || 0
+        total: total || 0,
+        today: todayCount || 0,
+        parking: parkingCount || 0,
+        totalIncome: totalIncome
       }
     });
-  })
-  .catch(err => {
+  } catch (error) {
+    console.error('获取停车统计错误:', error);
     res.status(500).json({
       success: false,
-      message: '获取统计数据失败'
+      message: '服务器错误'
     });
-  });
-});
-
-// 计算停车费用
-function calculateParkingFee(durationMinutes) {
-  if (durationMinutes <= 30) {
-    return 0; // 30分钟内免费
-  } else if (durationMinutes <= 120) {
-    return 5; // 2小时内5元
-  } else {
-    const hours = Math.ceil(durationMinutes / 60);
-    return 5 + (hours - 2) * 2; // 超过2小时后每小时2元
   }
-}
+});
 
 module.exports = router; 

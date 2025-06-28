@@ -1,212 +1,308 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const supabase = require('../config/database');
 
 const router = express.Router();
-const dbPath = path.join(__dirname, '../database/mall.db');
-const db = new sqlite3.Database(dbPath);
 
-// 获取总体统计数据
-router.get('/overview', (req, res) => {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const queries = [
-    // 用户统计
-    'SELECT COUNT(*) as total_users FROM users',
-    'SELECT COUNT(*) as today_users FROM users WHERE DATE(created_at) = ?',
-    
-    // 商品统计
-    'SELECT COUNT(*) as total_products FROM products',
-    'SELECT COUNT(*) as active_products FROM products WHERE status = 1',
-    
-    // 订单统计
-    'SELECT COUNT(*) as total_orders FROM orders',
-    'SELECT COUNT(*) as today_orders FROM orders WHERE DATE(created_at) = ?',
-    'SELECT SUM(total_amount) as total_revenue FROM orders WHERE status = "completed"',
-    'SELECT SUM(total_amount) as today_revenue FROM orders WHERE status = "completed" AND DATE(created_at) = ?',
-    
-    // 停车统计
-    'SELECT COUNT(*) as total_parking FROM parking_records',
-    'SELECT COUNT(*) as parking_now FROM parking_records WHERE status = "parking"',
-    'SELECT SUM(fee) as parking_revenue FROM parking_records WHERE status = "completed"',
-    
-    // 积分统计
-    'SELECT SUM(points) as total_points FROM users',
-    'SELECT COUNT(*) as users_with_points FROM users WHERE points > 0'
-  ];
+// 获取总体统计
+router.get('/overview', async (req, res) => {
+  try {
+    // 获取用户统计
+    const { count: totalUsers, error: usersError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
 
-  Promise.all(queries.map(query => {
-    return new Promise((resolve, reject) => {
-      db.get(query, query.includes('DATE') ? [today] : [], (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
+    if (usersError) {
+      console.error('Supabase用户统计错误:', usersError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
       });
-    });
-  }))
-  .then(results => {
-    const [
-      totalUsers, todayUsers,
-      totalProducts, activeProducts,
-      totalOrders, todayOrders, totalRevenue, todayRevenue,
-      totalParking, parkingNow, parkingRevenue,
-      totalPoints, usersWithPoints
-    ] = results;
+    }
+
+    // 获取商品统计
+    const { count: totalProducts, error: productsError } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true });
+
+    if (productsError) {
+      console.error('Supabase商品统计错误:', productsError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    // 获取订单统计
+    const { count: totalOrders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true });
+
+    if (ordersError) {
+      console.error('Supabase订单统计错误:', ordersError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    // 获取总收入
+    const { data: orders, error: incomeError } = await supabase
+      .from('orders')
+      .select('total_amount')
+      .eq('status', 'completed');
+
+    if (incomeError) {
+      console.error('Supabase收入统计错误:', incomeError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    const totalIncome = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
 
     res.json({
       success: true,
       data: {
-        users: {
-          total: totalUsers.total_users,
-          today: todayUsers.today_users
-        },
-        products: {
-          total: totalProducts.total_products,
-          active: activeProducts.active_products
-        },
-        orders: {
-          total: totalOrders.total_orders,
-          today: todayOrders.today_orders,
-          revenue: totalRevenue.total_revenue || 0,
-          todayRevenue: todayRevenue.today_revenue || 0
-        },
-        parking: {
-          total: totalParking.total_parking,
-          now: parkingNow.parking_now,
-          revenue: parkingRevenue.parking_revenue || 0
-        },
-        points: {
-          total: totalPoints.total_points || 0,
-          users: usersWithPoints.users_with_points
-        }
+        totalUsers: totalUsers || 0,
+        totalProducts: totalProducts || 0,
+        totalOrders: totalOrders || 0,
+        totalIncome: totalIncome
       }
     });
-  })
-  .catch(err => {
+  } catch (error) {
+    console.error('获取总体统计错误:', error);
     res.status(500).json({
       success: false,
-      message: '获取统计数据失败'
+      message: '服务器错误'
     });
-  });
+  }
 });
 
-// 获取销售趋势数据
-router.get('/sales-trend', (req, res) => {
-  const { days = 7 } = req.query;
-  
-  const query = `
-    SELECT 
-      DATE(created_at) as date,
-      COUNT(*) as order_count,
-      SUM(total_amount) as revenue
-    FROM orders 
-    WHERE created_at >= date('now', '-${days} days')
-    GROUP BY DATE(created_at)
-    ORDER BY date
-  `;
+// 获取今日统计
+router.get('/today', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
 
-  db.all(query, [], (err, results) => {
-    if (err) {
+    // 获取今日新增用户
+    const { count: todayUsers, error: usersError } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today);
+
+    if (usersError) {
+      console.error('Supabase今日用户统计错误:', usersError);
       return res.status(500).json({
         success: false,
-        message: '获取销售趋势失败'
+        message: '数据库错误'
       });
+    }
+
+    // 获取今日新增商品
+    const { count: todayProducts, error: productsError } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today);
+
+    if (productsError) {
+      console.error('Supabase今日商品统计错误:', productsError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    // 获取今日订单
+    const { count: todayOrders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today);
+
+    if (ordersError) {
+      console.error('Supabase今日订单统计错误:', ordersError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    // 获取今日收入
+    const { data: todayCompletedOrders, error: incomeError } = await supabase
+      .from('orders')
+      .select('total_amount')
+      .eq('status', 'completed')
+      .gte('created_at', today);
+
+    if (incomeError) {
+      console.error('Supabase今日收入统计错误:', incomeError);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    const todayIncome = todayCompletedOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+
+    res.json({
+      success: true,
+      data: {
+        todayUsers: todayUsers || 0,
+        todayProducts: todayProducts || 0,
+        todayOrders: todayOrders || 0,
+        todayIncome: todayIncome
+      }
+    });
+  } catch (error) {
+    console.error('获取今日统计错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 获取订单状态统计
+router.get('/orders/status', async (req, res) => {
+  try {
+    // 获取各状态订单数量
+    const statuses = ['pending', 'processing', 'completed', 'cancelled'];
+    const statusCounts = {};
+
+    for (const status of statuses) {
+      const { count, error } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', status);
+
+      if (error) {
+        console.error(`Supabase ${status} 订单统计错误:`, error);
+        statusCounts[status] = 0;
+      } else {
+        statusCounts[status] = count || 0;
+      }
     }
 
     res.json({
       success: true,
-      data: results
+      data: statusCounts
     });
-  });
+  } catch (error) {
+    console.error('获取订单状态统计错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
-// 获取商品销售排行
-router.get('/product-ranking', (req, res) => {
-  const { limit = 10 } = req.query;
-  
-  const query = `
-    SELECT 
-      p.name,
-      p.sales,
-      p.price,
-      c.name as category_name
-    FROM products p
-    LEFT JOIN categories c ON p.category_id = c.id
-    ORDER BY p.sales DESC
-    LIMIT ?
-  `;
+// 获取商品分类统计
+router.get('/products/categories', async (req, res) => {
+  try {
+    // 获取所有分类
+    const { data: categories, error: categoriesError } = await supabase
+      .from('categories')
+      .select('*');
 
-  db.all(query, [limit], (err, results) => {
-    if (err) {
+    if (categoriesError) {
+      console.error('Supabase分类查询错误:', categoriesError);
       return res.status(500).json({
         success: false,
-        message: '获取商品排行失败'
+        message: '数据库错误'
       });
+    }
+
+    // 获取每个分类的商品数量
+    const categoryStats = [];
+    for (const category of categories || []) {
+      const { count, error } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('category_id', category.id);
+
+      if (error) {
+        console.error(`Supabase分类 ${category.id} 商品统计错误:`, error);
+        categoryStats.push({
+          category_id: category.id,
+          category_name: category.name,
+          product_count: 0
+        });
+      } else {
+        categoryStats.push({
+          category_id: category.id,
+          category_name: category.name,
+          product_count: count || 0
+        });
+      }
     }
 
     res.json({
       success: true,
-      data: results
+      data: categoryStats
     });
-  });
+  } catch (error) {
+    console.error('获取商品分类统计错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
-// 获取用户活跃度统计
-router.get('/user-activity', (req, res) => {
-  const { days = 30 } = req.query;
-  
-  const query = `
-    SELECT 
-      DATE(created_at) as date,
-      COUNT(*) as new_users
-    FROM users 
-    WHERE created_at >= date('now', '-${days} days')
-    GROUP BY DATE(created_at)
-    ORDER BY date
-  `;
+// 获取销售趋势（最近7天）
+router.get('/sales/trend', async (req, res) => {
+  try {
+    const today = new Date();
+    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  db.all(query, [], (err, results) => {
-    if (err) {
+    // 获取最近7天的订单
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('total_amount, created_at')
+      .eq('status', 'completed')
+      .gte('created_at', sevenDaysAgo.toISOString())
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Supabase销售趋势查询错误:', error);
       return res.status(500).json({
         success: false,
-        message: '获取用户活跃度失败'
+        message: '数据库错误'
       });
     }
 
-    res.json({
-      success: true,
-      data: results
-    });
-  });
-});
-
-// 获取停车使用统计
-router.get('/parking-usage', (req, res) => {
-  const { days = 7 } = req.query;
-  
-  const query = `
-    SELECT 
-      DATE(created_at) as date,
-      COUNT(*) as usage_count,
-      SUM(fee) as revenue
-    FROM parking_records 
-    WHERE created_at >= date('now', '-${days} days')
-    GROUP BY DATE(created_at)
-    ORDER BY date
-  `;
-
-  db.all(query, [], (err, results) => {
-    if (err) {
-      return res.status(500).json({
-        success: false,
-        message: '获取停车使用统计失败'
-      });
+    // 按日期分组计算收入
+    const dailySales = {};
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split('T')[0];
+      dailySales[dateStr] = 0;
     }
 
+    // 计算每天的收入
+    orders.forEach(order => {
+      const orderDate = new Date(order.created_at).toISOString().split('T')[0];
+      if (dailySales[orderDate] !== undefined) {
+        dailySales[orderDate] += order.total_amount || 0;
+      }
+    });
+
+    // 转换为数组格式
+    const trendData = Object.keys(dailySales).map(date => ({
+      date,
+      sales: dailySales[date]
+    })).reverse();
+
     res.json({
       success: true,
-      data: results
+      data: trendData
     });
-  });
+  } catch (error) {
+    console.error('获取销售趋势错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
 });
 
 module.exports = router; 
