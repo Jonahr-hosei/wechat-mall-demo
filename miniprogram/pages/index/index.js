@@ -60,7 +60,6 @@ Page({
           hotProducts: result.data.hotProducts || [],
           newProducts: result.data.newProducts || [],
           categories: result.data.categories || [],
-          notices: result.data.notices || [],
           loading: false
         })
       } else {
@@ -78,15 +77,16 @@ Page({
       wx.showToast({
         title: error.message || '加载失败，请重试',
         icon: 'none',
-        duration: 3000
+        duration: 2000
       })
 
-      // 3秒后自动重试
+      // 5秒后自动重试一次
       setTimeout(() => {
         if (this.data.error) {
+          console.log('自动重试加载首页数据...')
           this.loadHomeData()
         }
-      }, 3000)
+      }, 5000)
     }
   },
 

@@ -3,7 +3,7 @@ const app = getApp()
 // 请求基础配置
 const baseConfig = {
   baseUrl: 'https://wechat-mall-demo.vercel.app/api/mall', // 云端后端服务API地址
-  timeout: 30000, // 增加超时时间到30秒，适应云端网络
+  timeout: 15000, // 减少超时时间到15秒
   header: {
     'Content-Type': 'application/json'
   }
@@ -61,9 +61,40 @@ const responseInterceptor = (response) => {
   }
 }
 
+// 检查网络状态
+const checkNetworkStatus = () => {
+  return new Promise((resolve) => {
+    wx.getNetworkType({
+      success: (res) => {
+        console.log('网络类型:', res.networkType)
+        if (res.networkType === 'none') {
+          wx.showToast({
+            title: '请检查网络连接',
+            icon: 'none',
+            duration: 2000
+          })
+          resolve(false)
+        } else {
+          resolve(true)
+        }
+      },
+      fail: () => {
+        resolve(false)
+      }
+    })
+  })
+}
+
 // 请求封装
 const request = (options) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    // 检查网络状态
+    const isNetworkAvailable = await checkNetworkStatus()
+    if (!isNetworkAvailable) {
+      reject(new Error('网络连接不可用'))
+      return
+    }
+
     // 显示加载提示
     if (options.showLoading !== false) {
       wx.showLoading({
@@ -124,7 +155,7 @@ const request = (options) => {
         wx.showToast({
           title: errorMsg,
           icon: 'none',
-          duration: 3000
+          duration: 2000
         })
         reject(new Error(errorMsg));
       }

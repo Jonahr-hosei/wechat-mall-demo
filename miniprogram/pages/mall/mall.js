@@ -29,6 +29,11 @@ Page({
   // 加载商品分类
   async loadCategories() {
     try {
+      wx.showLoading({
+        title: '加载分类...',
+        mask: true
+      })
+      
       const categoriesData = await api.getCategories()
       if (categoriesData.success) {
         // 对分类进行去重处理
@@ -46,7 +51,14 @@ Page({
       }
     } catch (error) {
       console.error('加载分类失败', error);
+      wx.showToast({
+        title: '分类加载失败',
+        icon: 'none',
+        duration: 2000
+      })
       // 不再使用本地分类，分类加载失败时categories保持为空
+    } finally {
+      wx.hideLoading()
     }
   },
 
