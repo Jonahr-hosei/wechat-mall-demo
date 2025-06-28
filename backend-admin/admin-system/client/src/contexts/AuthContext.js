@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
+// 配置 axios 基础 URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://wechat-mall-demo.vercel.app';
+axios.defaults.baseURL = API_BASE_URL;
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -60,6 +64,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message: response.data.message };
       }
     } catch (error) {
+      console.error('登录错误:', error);
       return {
         success: false,
         message: error.response?.data?.message || '登录失败'
