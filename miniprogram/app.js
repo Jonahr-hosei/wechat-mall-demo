@@ -40,7 +40,7 @@ App({
   globalData: {
     userInfo: null,
     loginCode: null,
-    baseUrl: 'http://192.168.1.4:5000/api/mall', // 后台管理系统API地址
+    baseUrl: 'https://wechat-mall-demo.vercel.app/api/mall', // 云端后端服务API地址
     mallId: 'mall_001', // 商场ID
     parkingLotId: 'parking_001', // 停车场ID
     // 支付相关配置

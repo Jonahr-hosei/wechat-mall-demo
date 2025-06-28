@@ -1,5 +1,6 @@
 // parking.js
 const app = getApp()
+const { api } = require('../../utils/request.js')
 
 Page({
   data: {
@@ -9,52 +10,42 @@ Page({
     showAddPlateModal: false,
     newPlateNumber: '',
     vehicleTypes: ['小型车', '中型车', '大型车'],
-    selectedVehicleType: 0
+    selectedVehicleType: 0,
+    loading: false,
+    currentParking: null,
+    showStartModal: false,
+    showEndModal: false,
+    plateNumber: '',
+    startTime: '',
+    endTime: '',
+    duration: 0,
+    fee: 0
   },
 
   onLoad() {
-    this.loadParkingStatus()
+    this.loadParkingInfo()
     this.loadPlateList()
     this.loadParkingHistory()
   },
 
   onShow() {
     // 每次显示页面时刷新停车状态
-    this.loadParkingStatus()
+    this.loadParkingInfo()
   },
 
-  // 加载停车状态
-  loadParkingStatus() {
+  // 加载停车信息
+  async loadParkingInfo() {
     const openId = wx.getStorageSync('openId')
     if (!openId) return
 
-    wx.request({
-      url: `${app.globalData.baseUrl}/parking/status`,
-      method: 'GET',
-      data: {
-        openId: openId,
-        parkingLotId: app.globalData.parkingLotId
-      },
-      success: (res) => {
-        if (res.data.success) {
-          this.setData({
-            parkingInfo: res.data.data
-          })
-        }
-      },
-      fail: (err) => {
-        console.error('加载停车状态失败', err)
-        // 使用模拟数据
-        this.setData({
-          parkingInfo: {
-            plateNumber: '京A12345',
-            entryTime: '2024-01-15 10:30:00',
-            duration: '2小时30分钟',
-            fee: 15.00
-          }
-        })
+    try {
+      const parkingData = await api.getParkingStatus(openId)
+      if (parkingData.success) {
+        this.setData({ parkingInfo: parkingData.data })
       }
-    })
+    } catch (error) {
+      console.error('加载停车信息失败', error)
+    }
   },
 
   // 加载车牌列表
@@ -96,131 +87,149 @@ Page({
     })
   },
 
-  // 加载停车记录
-  loadParkingHistory() {
+  // 加载停车历史
+  async loadParkingHistory() {
     const openId = wx.getStorageSync('openId')
     if (!openId) return
 
-    wx.request({
-      url: `${app.globalData.baseUrl}/parking/history`,
-      method: 'GET',
-      data: {
-        openId: openId,
-        limit: 5
-      },
-      success: (res) => {
-        if (res.data.success) {
-          this.setData({
-            parkingHistory: res.data.data
-          })
-        }
-      },
-      fail: (err) => {
-        console.error('加载停车记录失败', err)
-        // 使用模拟数据
-        this.setData({
-          parkingHistory: [
-            {
-              id: 1,
-              plateNumber: '京A12345',
-              entryTime: '2024-01-15 10:30:00',
-              exitTime: '2024-01-15 13:00:00',
-              duration: '2小时30分钟',
-              fee: 15.00,
-              status: 'paid'
-            },
-            {
-              id: 2,
-              plateNumber: '京A12345',
-              entryTime: '2024-01-14 14:20:00',
-              exitTime: '2024-01-14 16:50:00',
-              duration: '2小时30分钟',
-              fee: 15.00,
-              status: 'paid'
-            }
-          ]
-        })
+    try {
+      const historyData = await api.getParkingHistory(openId, { limit: 10 })
+      if (historyData.success) {
+        this.setData({ parkingHistory: historyData.data })
       }
-    })
+    } catch (error) {
+      console.error('加载停车历史失败', error)
+    }
   },
 
-  // 支付停车费
-  payParkingFee() {
-    if (!this.data.parkingInfo) {
+  // 开始停车
+  async startParking() {
+    const { plateNumber } = this.data
+    if (!plateNumber.trim()) {
       wx.showToast({
-        title: '暂无停车信息',
+        title: '请输入车牌号',
         icon: 'none'
       })
       return
     }
 
-    wx.showModal({
-      title: '确认支付',
-      content: `停车费用：¥${this.data.parkingInfo.fee}`,
-      success: (res) => {
-        if (res.confirm) {
-          this.processPayment()
-        }
-      }
-    })
-  },
-
-  // 处理支付
-  processPayment() {
-    wx.showLoading({
-      title: '支付中...'
-    })
-
     const openId = wx.getStorageSync('openId')
-    const paymentData = {
-      openId: openId,
-      parkingLotId: app.globalData.parkingLotId,
-      plateNumber: this.data.parkingInfo.plateNumber,
-      amount: this.data.parkingInfo.fee,
-      type: 'parking'
+    if (!openId) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      })
+      return
     }
 
-    wx.request({
-      url: `${app.globalData.baseUrl}/payment/create`,
-      method: 'POST',
-      data: paymentData,
-      success: (res) => {
-        if (res.data.success) {
-          // 调用微信支付
-          wx.requestPayment({
-            timeStamp: res.data.data.timeStamp,
-            nonceStr: res.data.data.nonceStr,
-            package: res.data.data.package,
-            signType: res.data.data.signType,
-            paySign: res.data.data.paySign,
-            success: () => {
-              wx.showToast({
-                title: '支付成功',
-                icon: 'success'
-              })
-              this.loadParkingStatus()
-              this.loadParkingHistory()
-            },
-            fail: () => {
-              wx.showToast({
-                title: '支付失败',
-                icon: 'none'
-              })
-            }
-          })
-        }
-      },
-      fail: (err) => {
-        console.error('创建支付订单失败', err)
+    this.setData({ loading: true })
+
+    try {
+      const parkingData = await api.startParking({
+        user_id: openId,
+        plate_number: plateNumber
+      })
+
+      if (parkingData.success) {
         wx.showToast({
-          title: '支付失败',
+          title: '停车开始',
+          icon: 'success'
+        })
+        this.setData({ 
+          showStartModal: false,
+          plateNumber: '',
+          currentParking: parkingData.data
+        })
+        this.loadParkingInfo()
+      } else {
+        wx.showToast({
+          title: parkingData.message || '开始停车失败',
           icon: 'none'
         })
-      },
-      complete: () => {
-        wx.hideLoading()
       }
-    })
+    } catch (error) {
+      console.error('开始停车失败', error)
+      wx.showToast({
+        title: '网络错误',
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ loading: false })
+    }
+  },
+
+  // 结束停车
+  async endParking() {
+    const { currentParking } = this.data
+    if (!currentParking) return
+
+    this.setData({ loading: true })
+
+    try {
+      const endData = await api.endParking(currentParking.id)
+      if (endData.success) {
+        this.setData({
+          endTime: endData.data.exit_time,
+          duration: endData.data.duration_minutes,
+          fee: endData.data.fee,
+          showEndModal: true
+        })
+      } else {
+        wx.showToast({
+          title: endData.message || '结束停车失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      console.error('结束停车失败', error)
+      wx.showToast({
+        title: '网络错误',
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ loading: false })
+    }
+  },
+
+  // 支付停车费
+  async payParkingFee() {
+    const { currentParking, fee } = this.data
+    if (!currentParking) return
+
+    this.setData({ loading: true })
+
+    try {
+      const paymentData = await api.payParking(currentParking.id, {
+        payment_method: 'wechat',
+        amount: fee
+      })
+
+      if (paymentData.success) {
+        wx.showToast({
+          title: '支付成功',
+          icon: 'success'
+        })
+        this.setData({ 
+          showEndModal: false,
+          currentParking: null
+        })
+        this.loadParkingInfo()
+        this.loadParkingHistory()
+      } else {
+        wx.showToast({
+          title: paymentData.message || '支付失败',
+          icon: 'none'
+        })
+      }
+    } catch (error) {
+      console.error('支付失败', error)
+      wx.showToast({
+        title: '网络错误',
+        icon: 'none'
+      })
+    } finally {
+      this.setData({ loading: false })
+    }
   },
 
   // 显示添加车牌弹窗

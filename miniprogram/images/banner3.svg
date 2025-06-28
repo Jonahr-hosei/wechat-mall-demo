@@ -1,0 +1,10 @@
+<svg width="750" height="200" viewBox="0 0 750 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="750" height="200" fill="url(#gradient3)"/>
+  <text x="375" y="100" text-anchor="middle" fill="white" font-size="32" font-weight="bold">热销商品</text>
+  <defs>
+    <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#34C759;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#30D158;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg> 

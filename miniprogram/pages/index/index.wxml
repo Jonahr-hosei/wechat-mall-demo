@@ -1,76 +1,149 @@
-<!--index.wxml-->
+<!--pages/index/index.wxml-->
 <view class="container">
   <!-- 轮播图 -->
-  <swiper class="banner" indicator-dots="{{true}}" autoplay="{{true}}" interval="{{3000}}" duration="{{500}}">
+  <swiper class="banner" indicator-dots="true" autoplay="true" interval="3000" duration="500">
     <swiper-item wx:for="{{banners}}" wx:key="id">
-      <view class="banner-image" bindtap="onBannerTap" data-id="{{item.id}}">
-        <text class="banner-text">{{item.title}}</text>
-      </view>
+      <image src="{{item.image}}" mode="aspectFill" class="banner-image"/>
+      <view class="banner-title">{{item.title}}</view>
     </swiper-item>
   </swiper>
 
   <!-- 功能导航 -->
   <view class="nav-grid">
-    <view class="nav-item" bindtap="navigateToMall">
-      <view class="nav-icon">🛍️</view>
-      <text class="nav-text">商城购物</text>
+    <view class="nav-item" bindtap="onMallTap">
+      <image src="/images/mall.png" class="nav-icon"/>
+      <text class="nav-text">商城</text>
     </view>
-    <view class="nav-item" bindtap="navigateToParking">
-      <view class="nav-icon">🚗</view>
-      <text class="nav-text">停车缴费</text>
+    <view class="nav-item" bindtap="onParkingTap">
+      <image src="/images/parking.svg" class="nav-icon"/>
+      <text class="nav-text">停车</text>
     </view>
-    <view class="nav-item" bindtap="navigateToPoints">
-      <view class="nav-icon">🎁</view>
-      <text class="nav-text">积分中心</text>
+    <view class="nav-item" bindtap="onPointsTap">
+      <image src="/images/points.svg" class="nav-icon"/>
+      <text class="nav-text">积分</text>
     </view>
-    <view class="nav-item" bindtap="navigateToUser">
-      <view class="nav-icon">👤</view>
-      <text class="nav-text">个人中心</text>
+    <view class="nav-item" bindtap="onUserTap">
+      <image src="/images/user.png" class="nav-icon"/>
+      <text class="nav-text">我的</text>
     </view>
   </view>
 
-  <!-- 热门商品 -->
-  <view class="section">
-    <view class="section-header">
-      <text class="section-title">热门商品</text>
-      <text class="section-more" bindtap="navigateToMall">查看更多</text>
-    </view>
-    <scroll-view class="product-scroll" scroll-x="{{true}}">
-      <view class="product-item" wx:for="{{hotProducts}}" wx:key="id" bindtap="navigateToProduct" data-id="{{item.id}}">
-        <view class="product-image">
-          <text class="product-image-text">{{item.name}}</text>
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{error}}" class="error-container">
+    <text class="error-text">加载失败</text>
+    <button class="retry-btn" bindtap="onRetry">重新加载</button>
+  </view>
+
+  <!-- 内容区域 -->
+  <view wx:else>
+    <!-- 分类导航 -->
+    <view wx:if="{{categories.length > 0}}" class="section">
+      <view class="section-header">
+        <text class="section-title">商品分类</text>
+        <text class="section-more" bindtap="onMallTap">更多 ></text>
+      </view>
+      <scroll-view class="category-scroll" scroll-x="true">
+        <view class="category-list">
+          <view 
+            class="category-item" 
+            wx:for="{{categories}}" 
+            wx:key="id"
+            bindtap="onCategoryTap"
+            data-id="{{item.id}}"
+            data-name="{{item.name}}"
+          >
+            <image src="{{item.image || '/images/default-category.svg'}}" class="category-image"/>
+            <text class="category-name">{{item.name}}</text>
+          </view>
         </view>
-        <view class="product-info">
-          <text class="product-name">{{item.name}}</text>
-          <text class="product-price">¥{{item.price}}</text>
+      </scroll-view>
+    </view>
+
+    <!-- 热门商品 -->
+    <view wx:if="{{hotProducts.length > 0}}" class="section">
+      <view class="section-header">
+        <text class="section-title">热门商品</text>
+        <text class="section-more" bindtap="onMallTap">更多 ></text>
+      </view>
+      <view class="product-grid">
+        <view 
+          class="product-item" 
+          wx:for="{{hotProducts}}" 
+          wx:key="id"
+          bindtap="onProductTap"
+          data-id="{{item.id}}"
+        >
+          <image src="{{item.image}}" mode="aspectFill" class="product-image"/>
+          <view class="product-info">
+            <text class="product-name">{{item.name}}</text>
+            <text class="product-price">¥{{item.price}}</text>
+          </view>
         </view>
       </view>
-    </scroll-view>
-  </view>
-
-  <!-- 商场公告 -->
-  <view class="section">
-    <view class="section-header">
-      <text class="section-title">商场公告</text>
     </view>
-    <view class="notice-list">
-      <view class="notice-item" wx:for="{{notices}}" wx:key="id" bindtap="onNoticeTap" data-id="{{item.id}}">
-        <text class="notice-title">{{item.title}}</text>
-        <text class="notice-time">{{item.time}}</text>
+
+    <!-- 最新商品 -->
+    <view wx:if="{{newProducts.length > 0}}" class="section">
+      <view class="section-header">
+        <text class="section-title">最新商品</text>
+        <text class="section-more" bindtap="onMallTap">更多 ></text>
+      </view>
+      <view class="product-grid">
+        <view 
+          class="product-item" 
+          wx:for="{{newProducts}}" 
+          wx:key="id"
+          bindtap="onProductTap"
+          data-id="{{item.id}}"
+        >
+          <image src="{{item.image}}" mode="aspectFill" class="product-image"/>
+          <view class="product-info">
+            <text class="product-name">{{item.name}}</text>
+            <text class="product-price">¥{{item.price}}</text>
+          </view>
+        </view>
       </view>
     </view>
-  </view>
 
-  <!-- 停车状态 -->
-  <view class="parking-status" wx:if="{{parkingInfo}}">
-    <view class="status-header">
-      <text class="status-title">停车状态</text>
-      <text class="status-time">{{parkingInfo.duration}}</text>
+    <!-- 公告 -->
+    <view wx:if="{{notices.length > 0}}" class="section">
+      <view class="section-header">
+        <text class="section-title">最新公告</text>
+      </view>
+      <view class="notice-list">
+        <view 
+          class="notice-item" 
+          wx:for="{{notices}}" 
+          wx:key="id"
+          bindtap="onNoticeTap"
+          data-id="{{item.id}}"
+        >
+          <text class="notice-title">{{item.title}}</text>
+          <text class="notice-time">{{item.time}}</text>
+        </view>
+      </view>
     </view>
-    <view class="status-info">
-      <text class="plate-number">车牌号：{{parkingInfo.plateNumber}}</text>
-      <text class="parking-fee">费用：¥{{parkingInfo.fee}}</text>
+
+    <!-- 停车信息 -->
+    <view wx:if="{{parkingInfo}}" class="section">
+      <view class="section-header">
+        <text class="section-title">停车信息</text>
+      </view>
+      <view class="parking-info">
+        <view class="parking-status {{parkingInfo.isParking ? 'parking' : 'not-parking'}}">
+          <text class="status-text">{{parkingInfo.isParking ? '停车中' : '未停车'}}</text>
+        </view>
+        <view wx:if="{{parkingInfo.isParking}}" class="parking-details">
+          <text class="parking-time">停车时间: {{parkingInfo.startTime}}</text>
+          <text class="parking-fee">费用: ¥{{parkingInfo.fee}}</text>
+        </view>
+      </view>
     </view>
-    <button class="btn-primary" bindtap="navigateToParking">立即缴费</button>
   </view>
 </view> 

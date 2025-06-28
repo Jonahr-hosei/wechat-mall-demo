@@ -1,4 +1,5 @@
 const app = getApp()
+const { api } = require('../../utils/request.js')
 
 Page({
   data: {
@@ -44,34 +45,30 @@ Page({
   },
 
   // 加载商品详情
-  loadProductDetail(id) {
+  async loadProductDetail(id) {
     this.setData({ loading: true })
     
-    wx.request({
-      url: `${app.globalData.baseUrl}/products/${id}`,
-      method: 'GET',
-      success: (res) => {
-        if (res.data.success) {
-          this.setData({ 
-            product: res.data.data,
-            loading: false 
-          })
-        } else {
-          wx.showToast({
-            title: res.data.message || '商品不存在',
-            icon: 'none'
-          })
-        }
-      },
-      fail: (err) => {
-        console.error('加载商品详情失败', err)
+    try {
+      const productData = await api.getProductDetail(id)
+      if (productData.success) {
+        this.setData({ 
+          product: productData.data,
+          loading: false 
+        })
+      } else {
         wx.showToast({
-          title: '网络错误',
+          title: productData.message || '商品不存在',
           icon: 'none'
         })
-        this.setData({ loading: false })
       }
-    })
+    } catch (error) {
+      console.error('加载商品详情失败', error)
+      wx.showToast({
+        title: '网络错误',
+        icon: 'none'
+      })
+      this.setData({ loading: false })
+    }
   },
 
   // 加载商品评价
@@ -155,46 +152,42 @@ Page({
   },
 
   // 创建订单
-  createOrder(items) {
+  async createOrder(items) {
     const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0)
     const user_id = wx.getStorageSync('userId') || 1 // 模拟用户ID
     
-    wx.request({
-      url: `${app.globalData.baseUrl}/orders`,
-      method: 'POST',
-      data: {
+    try {
+      const orderData = await api.createOrder({
         user_id,
         items,
         total_amount: totalAmount,
         payment_method: 'wechat'
-      },
-      success: (res) => {
-        if (res.data.success) {
-          const orderId = res.data.data.order_id
-          const orderNo = res.data.data.order_no
-          
-          // 设置支付倒计时
-          this.startPaymentTimer(orderId, orderNo)
-          
-          // 跳转到支付页面
-          wx.navigateTo({
-            url: `/pages/payment/payment?orderId=${orderId}&orderNo=${orderNo}&amount=${totalAmount}`
-          })
-        } else {
-          wx.showToast({
-            title: res.data.message || '创建订单失败',
-            icon: 'none'
-          })
-        }
-      },
-      fail: (err) => {
-        console.error('创建订单失败', err)
+      })
+      
+      if (orderData.success) {
+        const orderId = orderData.data.order_id
+        const orderNo = orderData.data.order_no
+        
+        // 设置支付倒计时
+        this.startPaymentTimer(orderId, orderNo)
+        
+        // 跳转到支付页面
+        wx.navigateTo({
+          url: `/pages/payment/payment?orderId=${orderId}&orderNo=${orderNo}&amount=${totalAmount}`
+        })
+      } else {
         wx.showToast({
-          title: '网络错误',
+          title: orderData.message || '创建订单失败',
           icon: 'none'
         })
       }
-    })
+    } catch (error) {
+      console.error('创建订单失败', error)
+      wx.showToast({
+        title: '网络错误',
+        icon: 'none'
+      })
+    }
   },
 
   // 开始支付倒计时

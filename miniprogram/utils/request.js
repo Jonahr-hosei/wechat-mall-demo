@@ -2,8 +2,8 @@ const app = getApp()
 
 // 请求基础配置
 const baseConfig = {
-  baseUrl: app.globalData.baseUrl,
-  timeout: 10000,
+  baseUrl: 'https://wechat-mall-demo.vercel.app/api/mall', // 云端后端服务API地址
+  timeout: 30000, // 增加超时时间到30秒，适应云端网络
   header: {
     'Content-Type': 'application/json'
   }
@@ -61,33 +61,72 @@ const responseInterceptor = (response) => {
   }
 }
 
-// 基础配置
-const BASE_URL = 'http://localhost:5000/api/mall'; // 后台管理系统API地址
-
 // 请求封装
 const request = (options) => {
   return new Promise((resolve, reject) => {
+    // 显示加载提示
+    if (options.showLoading !== false) {
+      wx.showLoading({
+        title: '加载中...',
+        mask: true
+      })
+    }
+
+    console.log('发起请求:', baseConfig.baseUrl + options.url, options.data)
+
     wx.request({
-      url: BASE_URL + options.url,
+      url: baseConfig.baseUrl + options.url,
       method: options.method || 'GET',
       data: options.data || {},
       header: {
         'Content-Type': 'application/json',
         ...options.header
       },
+      timeout: baseConfig.timeout,
       success: (res) => {
+        wx.hideLoading()
+        console.log('请求成功:', res)
+        
         if (res.statusCode === 200) {
           if (res.data.success) {
             resolve(res.data);
           } else {
+            wx.showToast({
+              title: res.data.message || '请求失败',
+              icon: 'none'
+            })
             reject(new Error(res.data.message || '请求失败'));
           }
         } else {
+          wx.showToast({
+            title: `网络错误: ${res.statusCode}`,
+            icon: 'none'
+          })
           reject(new Error(`HTTP错误: ${res.statusCode}`));
         }
       },
       fail: (err) => {
-        reject(new Error('网络请求失败'));
+        wx.hideLoading()
+        console.error('请求失败:', err)
+        
+        // 根据错误类型显示不同提示
+        let errorMsg = '网络请求失败'
+        if (err.errMsg) {
+          if (err.errMsg.includes('timeout')) {
+            errorMsg = '请求超时，请检查网络'
+          } else if (err.errMsg.includes('fail')) {
+            errorMsg = '网络连接失败'
+          } else if (err.errMsg.includes('ssl')) {
+            errorMsg = 'SSL证书验证失败'
+          }
+        }
+        
+        wx.showToast({
+          title: errorMsg,
+          icon: 'none',
+          duration: 3000
+        })
+        reject(new Error(errorMsg));
       }
     });
   });
@@ -121,56 +160,76 @@ const api = {
   }),
 
   getUserOrders: (userId, params) => request({
-    url: `/users/${userId}/orders`,
-    data: params
+    url: `/orders`,
+    data: { user_id: userId, ...params }
+  }),
+
+  getOrderDetail: (orderId) => request({
+    url: `/orders/${orderId}`
+  }),
+
+  cancelOrder: (orderId) => request({
+    url: `/orders/${orderId}/cancel`,
+    method: 'POST'
   }),
 
   // 用户相关
-  getUserInfo: (userId) => request({
-    url: `/users/${userId}`
+  getUserInfo: (openId) => request({
+    url: `/user/${openId}`
   }),
 
-  updateUserInfo: (userId, userData) => request({
-    url: `/users/${userId}`,
-    method: 'PUT',
+  createUser: (userData) => request({
+    url: '/user',
+    method: 'POST',
     data: userData
   }),
 
   // 积分相关
   getUserPoints: (userId) => request({
-    url: `/users/${userId}/points`
+    url: `/points/${userId}`
   }),
 
   getPointRecords: (userId, params) => request({
-    url: `/users/${userId}/point-records`,
+    url: `/points/${userId}/records`,
     data: params
   }),
 
   // 停车相关
   getParkingStatus: (userId) => request({
-    url: `/users/${userId}/parking/status`
+    url: `/parking/${userId}`
   }),
 
   startParking: (parkingData) => request({
-    url: '/parking/start',
+    url: '/parking/entry',
     method: 'POST',
     data: parkingData
   }),
 
-  endParking: (parkingId) => request({
-    url: `/parking/${parkingId}/end`,
+  endParking: (recordId) => request({
+    url: `/parking/exit/${recordId}`,
     method: 'POST'
   }),
 
-  payParking: (parkingId, paymentData) => request({
-    url: `/parking/${parkingId}/pay`,
+  payParking: (recordId, paymentData) => request({
+    url: `/parking/exit/${recordId}`,
     method: 'POST',
     data: paymentData
   }),
 
   getParkingHistory: (userId, params) => request({
-    url: `/users/${userId}/parking/history`,
+    url: `/parking/${userId}`,
     data: params
+  }),
+
+  // 首页数据
+  getHomeData: () => request({
+    url: '/home',
+    showLoading: false // 首页不显示loading
+  }),
+
+  // 订单状态查询
+  getOrderStatus: (orderId) => request({
+    url: `/orders/${orderId}/status`
   })
 };
 

@@ -1,89 +1,99 @@
 // user.js
 const app = getApp()
+const { api } = require('../../utils/request.js')
 const util = require('../../utils/util.js')
 
 Page({
   data: {
     userInfo: null,
-    userPoints: 0,
+    points: 0,
     orderCount: 0,
     couponCount: 0,
-    favoriteCount: 0
+    favoriteCount: 0,
+    parkingInfo: null,
+    loading: true
   },
 
   onLoad() {
     this.loadUserInfo()
-    this.loadUserStats()
+    this.loadUserPoints()
+    this.loadOrderCount()
+    this.loadParkingInfo()
   },
 
   onShow() {
+    // 每次显示页面时刷新数据
     this.loadUserInfo()
-    this.loadUserStats()
+    this.loadUserPoints()
+    this.loadOrderCount()
+    this.loadParkingInfo()
   },
 
   // 加载用户信息
-  loadUserInfo() {
-    const userInfo = wx.getStorageSync('userInfo')
-    if (userInfo) {
-      this.setData({ userInfo })
+  async loadUserInfo() {
+    const openId = wx.getStorageSync('openId')
+    if (!openId) {
+      this.setData({ loading: false })
+      return
+    }
+
+    try {
+      const userData = await api.getUserInfo(openId)
+      if (userData.success) {
+        this.setData({ 
+          userInfo: userData.data,
+          loading: false 
+        })
+      }
+    } catch (error) {
+      console.error('加载用户信息失败', error)
+      this.setData({ loading: false })
     }
   },
 
-  // 加载用户统计数据
-  loadUserStats() {
+  // 加载用户积分
+  async loadUserPoints() {
     const openId = wx.getStorageSync('openId')
     if (!openId) return
 
-    // 获取用户积分
-    this.getUserPoints()
-    
-    // 获取订单数量
-    this.getOrderCount()
-    
-    // 获取优惠券数量
-    this.getCouponCount()
-    
-    // 获取收藏数量
-    this.getFavoriteCount()
+    try {
+      const pointsData = await api.getUserPoints(openId)
+      if (pointsData.success) {
+        this.setData({ points: pointsData.data.points || 0 })
+      }
+    } catch (error) {
+      console.error('加载积分失败', error)
+    }
   },
 
-  // 获取用户积分
-  getUserPoints() {
-    const app = getApp()
-    wx.request({
-      url: `${app.globalData.baseUrl}/mall/user/${wx.getStorageSync('openId')}`,
-      method: 'GET',
-      success: (res) => {
-        if (res.data.success) {
-          this.setData({
-            points: res.data.data.points || 0
-          })
-        }
-      },
-      fail: () => {
-        this.setData({ points: 0 })
+  // 加载订单数量
+  async loadOrderCount() {
+    const openId = wx.getStorageSync('openId')
+    if (!openId) return
+
+    try {
+      const ordersData = await api.getUserOrders(openId, { limit: 1 })
+      if (ordersData.success) {
+        this.setData({ orderCount: ordersData.pagination?.total || 0 })
       }
-    })
+    } catch (error) {
+      console.error('加载订单数量失败', error)
+    }
   },
 
-  // 获取订单数量
-  getOrderCount() {
-    const app = getApp()
-    wx.request({
-      url: `${app.globalData.baseUrl}/mall/orders`,
-      method: 'GET',
-      data: { user_id: wx.getStorageSync('userId') },
-      success: (res) => {
-        if (res.data.success) {
-          this.setData({
-            orderCount: res.data.data.length || 0
-          })
-        }
-      },
-      fail: () => {
-        this.setData({ orderCount: 0 })
+  // 加载停车信息
+  async loadParkingInfo() {
+    const openId = wx.getStorageSync('openId')
+    if (!openId) return
+
+    try {
+      const parkingData = await api.getParkingStatus(openId)
+      if (parkingData.success) {
+        this.setData({ parkingInfo: parkingData.data })
       }
-    })
+    } catch (error) {
+      console.error('加载停车信息失败', error)
+    }
   },
 
   // 获取优惠券数量
@@ -124,7 +134,7 @@ Page({
         wx.removeStorageSync('token')
         this.setData({ 
           userInfo: null,
-          userPoints: 0,
+          points: 0,
           orderCount: 0,
           couponCount: 0,
           favoriteCount: 0
