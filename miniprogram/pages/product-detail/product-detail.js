@@ -16,14 +16,18 @@ Page({
     },
     // 支付相关
     orderTimer: null,
-    paymentDeadline: null
+    paymentDeadline: null,
+    showSpecModal: false,
+    selectedSpec: {},
+    reviewTotal: 0,
+    user_id: null
   },
 
   onLoad(options) {
     const { id } = options
     if (id) {
       this.loadProductDetail(id)
-      this.loadReviews(id)
+      this.loadReviews()
     }
     this.updateCartCount()
   },
@@ -71,54 +75,10 @@ Page({
   },
 
   // 加载商品评价
-  loadReviews(productId) {
-    // 使用本地默认头像
-    const mockReviews = [
-      {
-        id: 1,
-        user: '用户***123',
-        avatar: '/images/default-avatar.png',
-        rating: 5,
-        content: '商品质量很好，包装也很精美，推荐购买！',
-        images: [],
-        createTime: '2024-06-20 14:30:00'
-      },
-      {
-        id: 2,
-        user: '用户***456',
-        avatar: '/images/default-avatar.png',
-        rating: 4,
-        content: '发货速度快，商品符合描述，满意！',
-        images: [],
-        createTime: '2024-06-19 16:20:00'
-      },
-      {
-        id: 3,
-        user: '用户***789',
-        avatar: '/images/default-avatar.png',
-        rating: 5,
-        content: '第二次购买了，一如既往的好，客服态度也很好。',
-        images: [],
-        createTime: '2024-06-18 09:15:00'
-      }
-    ]
-
-    const reviewStats = {
-      total: mockReviews.length,
-      average: 4.7,
-      distribution: {
-        5: 2,
-        4: 1,
-        3: 0,
-        2: 0,
-        1: 0
-      }
-    }
-
-    this.setData({
-      reviews: mockReviews,
-      reviewStats
-    })
+  loadReviews() {
+    // 获取用户ID
+    const user_id = wx.getStorageSync('userId') || null
+    this.setData({ user_id })
   },
 
   // 更新购物车数量

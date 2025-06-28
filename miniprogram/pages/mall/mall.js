@@ -124,11 +124,9 @@ Page({
           title: '网络错误，请检查网络连接',
           icon: 'none'
         })
-        // 使用模拟数据作为备用
-        const mockProducts = this.getMockProducts()
+        // 移除模拟数据，只显示错误提示
         this.setData({
-          products: refresh ? mockProducts : [...this.data.products, ...mockProducts],
-          page: this.data.page + 1,
+          loading: false,
           noMore: true
         })
       },
@@ -136,52 +134,6 @@ Page({
         this.setData({ loading: false })
       }
     })
-  },
-
-  // 获取模拟商品数据
-  getMockProducts() {
-    const mockData = [
-      {
-        id: 1,
-        name: '时尚女装连衣裙',
-        description: '春季新款，舒适面料，时尚设计',
-        price: 299,
-        original_price: 399,
-        image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lhpvmlrDlubPml7bml6DlsIHpnaI8L3RleHQ+Cjwvc3ZnPgo=',
-        sales: 128,
-        points: 30
-      },
-      {
-        id: 2,
-        name: '男士休闲运动鞋',
-        description: '轻便舒适，适合日常运动',
-        price: 399,
-        original_price: 499,
-        image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lubPmnI3mnInmnInlubPml7bml6DlsIHpnaI8L3RleHQ+Cjwvc3ZnPgo=',
-        sales: 89,
-        points: 40
-      },
-      {
-        id: 3,
-        name: '儿童益智玩具套装',
-        description: '开发智力，寓教于乐',
-        price: 99,
-        image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lubPmnI3lubPml7bml6DlsIHpnaI+WtOeJueS7tuWKoOi9veWbvueJhzwvdGV4dD4KPC9zdmc+Cg==',
-        sales: 256,
-        points: 10
-      },
-      {
-        id: 4,
-        name: '女士手提包',
-        description: '简约时尚，实用百搭',
-        price: 199,
-        original_price: 299,
-        image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDMwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTUwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM2NjY2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7lhpvmlrDlubPml7bml6DlsIHpnaI+WtOeJueS7tuWKoOi9veWbvueJhzwvdGV4dD4KPC9zdmc+Cg==',
-        sales: 67,
-        points: 20
-      }
-    ]
-    return mockData
   },
 
   // 搜索输入

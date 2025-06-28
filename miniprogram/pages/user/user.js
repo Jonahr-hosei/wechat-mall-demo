@@ -34,49 +34,68 @@ Page({
     const openId = wx.getStorageSync('openId')
     if (!openId) return
 
-    // 加载积分
-    this.loadUserPoints()
+    // 获取用户积分
+    this.getUserPoints()
     
-    // 加载订单数量
-    this.loadOrderCount()
+    // 获取订单数量
+    this.getOrderCount()
     
-    // 加载优惠券数量
-    this.loadCouponCount()
+    // 获取优惠券数量
+    this.getCouponCount()
     
-    // 加载收藏数量
-    this.loadFavoriteCount()
+    // 获取收藏数量
+    this.getFavoriteCount()
   },
 
-  // 加载用户积分
-  loadUserPoints() {
-    // 这里应该调用API获取积分，暂时使用模拟数据
-    this.setData({
-      userPoints: 1250
+  // 获取用户积分
+  getUserPoints() {
+    const app = getApp()
+    wx.request({
+      url: `${app.globalData.baseUrl}/mall/user/${wx.getStorageSync('openId')}`,
+      method: 'GET',
+      success: (res) => {
+        if (res.data.success) {
+          this.setData({
+            points: res.data.data.points || 0
+          })
+        }
+      },
+      fail: () => {
+        this.setData({ points: 0 })
+      }
     })
   },
 
-  // 加载订单数量
-  loadOrderCount() {
-    // 这里应该调用API获取订单数量，暂时使用模拟数据
-    this.setData({
-      orderCount: 8
+  // 获取订单数量
+  getOrderCount() {
+    const app = getApp()
+    wx.request({
+      url: `${app.globalData.baseUrl}/mall/orders`,
+      method: 'GET',
+      data: { user_id: wx.getStorageSync('userId') },
+      success: (res) => {
+        if (res.data.success) {
+          this.setData({
+            orderCount: res.data.data.length || 0
+          })
+        }
+      },
+      fail: () => {
+        this.setData({ orderCount: 0 })
+      }
     })
   },
 
-  // 加载优惠券数量
-  loadCouponCount() {
-    // 这里应该调用API获取优惠券数量，暂时使用模拟数据
-    this.setData({
-      couponCount: 3
-    })
+  // 获取优惠券数量
+  getCouponCount() {
+    // 暂时设为0，等优惠券功能实现后再调用API
+    this.setData({ couponCount: 0 })
   },
 
-  // 加载收藏数量
-  loadFavoriteCount() {
-    // 这里应该调用API获取收藏数量，暂时使用模拟数据
-    this.setData({
-      favoriteCount: 12
-    })
+  // 获取收藏数量
+  getFavoriteCount() {
+    // 暂时设为0，等收藏功能实现后再调用API
+    this.setData({ favoriteCount: 0 })
   },
 
   // 用户登录
