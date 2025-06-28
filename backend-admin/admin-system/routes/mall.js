@@ -95,9 +95,19 @@ router.get('/products', async (req, res) => {
       });
     }
 
+    // 修复图片路径
+    const fixedProducts = products.map(product => {
+      let imageUrl = product.image;
+      if (imageUrl && imageUrl.startsWith('/uploads/')) {
+        // 如果是本地路径，转换为完整的Vercel URL
+        imageUrl = `https://wechat-mall-demo.vercel.app${imageUrl}`;
+      }
+      return { ...product, image: imageUrl };
+    });
+
     res.json({
       success: true,
-      data: products,
+      data: fixedProducts,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -144,9 +154,16 @@ router.get('/products/:id', async (req, res) => {
       });
     }
 
+    // 修复图片路径
+    let imageUrl = product.image;
+    if (imageUrl && imageUrl.startsWith('/uploads/')) {
+      imageUrl = `https://wechat-mall-demo.vercel.app${imageUrl}`;
+    }
+    const fixedProduct = { ...product, image: imageUrl };
+
     res.json({
       success: true,
-      data: product
+      data: fixedProduct
     });
   } catch (error) {
     console.error('获取商品详情错误:', error);
@@ -866,11 +883,22 @@ router.get('/home', async (req, res) => {
       });
     }
 
+    // 修复商品图片路径
+    const fixImageUrl = (products) => {
+      return products.map(product => {
+        let imageUrl = product.image;
+        if (imageUrl && imageUrl.startsWith('/uploads/')) {
+          imageUrl = `https://wechat-mall-demo.vercel.app${imageUrl}`;
+        }
+        return { ...product, image: imageUrl };
+      });
+    };
+
     res.json({
       success: true,
       data: {
-        hotProducts: hotProducts || [],
-        newProducts: newProducts || [],
+        hotProducts: fixImageUrl(hotProducts || []),
+        newProducts: fixImageUrl(newProducts || []),
         categories: categories || []
       }
     });

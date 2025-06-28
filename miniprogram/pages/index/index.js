@@ -1,5 +1,5 @@
 const app = getApp()
-const { api } = require('../../utils/request.js')
+const { getHomeData, getProducts, getCategories, getParkingInfo } = require('../../utils/request.js')
 
 Page({
   data: {
@@ -26,7 +26,8 @@ Page({
     notices: [],
     parkingInfo: null,
     loading: true,
-    error: false
+    error: false,
+    isRequesting: false
   },
 
   onLoad() {
@@ -36,31 +37,75 @@ Page({
   },
 
   onShow() {
-    // 每次显示页面时刷新数据
-    this.loadHomeData()
-    // 每次显示页面时检查停车状态
+    if (!this.data.isRequesting && 
+        this.data.hotProducts.length === 0 && 
+        this.data.newProducts.length === 0) {
+      this.loadHomeData()
+    }
     this.checkParkingStatus()
   },
 
   // 加载首页数据
   async loadHomeData() {
+    // 防止重复请求
+    if (this.data.isRequesting) {
+      console.log('请求正在进行中，跳过重复请求')
+      return
+    }
+
     try {
       this.setData({
         loading: true,
-        error: false
+        error: false,
+        isRequesting: true
       })
 
       console.log('开始加载首页数据...')
       
-      const result = await api.getHomeData()
+      const result = await getHomeData()
       console.log('首页数据加载成功:', result)
 
       if (result.success && result.data) {
+        // 对分类进行去重处理
+        const categories = result.data.categories || []
+        const uniqueCategories = []
+        const seenNames = new Set()
+        
+        categories.forEach(category => {
+          if (!seenNames.has(category.name)) {
+            uniqueCategories.push(category)
+            seenNames.add(category.name)
+          }
+        })
+        
+        // 修复商品图片路径
+        const fixImageUrl = (products) => {
+          return products.map(item => {
+            let imageUrl = item.image;
+            if (imageUrl && imageUrl.startsWith('/uploads/')) {
+              imageUrl = `https://wechat-mall-demo.vercel.app${imageUrl}`;
+            }
+            return { ...item, image: imageUrl };
+          });
+        };
+        
+        const hotProducts = fixImageUrl(result.data.hotProducts || []);
+        const newProducts = fixImageUrl(result.data.newProducts || []);
+        
+        // 保存到本地缓存
+        wx.setStorageSync('homeDataCache', {
+          hotProducts: hotProducts,
+          newProducts: newProducts,
+          categories: uniqueCategories,
+          timestamp: Date.now()
+        })
+        
         this.setData({
-          hotProducts: result.data.hotProducts || [],
-          newProducts: result.data.newProducts || [],
-          categories: result.data.categories || [],
-          loading: false
+          hotProducts: hotProducts,
+          newProducts: newProducts,
+          categories: uniqueCategories,
+          loading: false,
+          isRequesting: false
         })
       } else {
         throw new Error(result.message || '数据加载失败')
@@ -68,9 +113,42 @@ Page({
     } catch (error) {
       console.error('加载首页数据失败:', error)
       
+      // 检查是否有缓存数据
+      const cachedData = wx.getStorageSync('homeDataCache')
+      if (cachedData) {
+        console.log('使用本地缓存数据')
+        
+        // 修复缓存数据的图片路径
+        const fixImageUrl = (products) => {
+          return products.map(item => {
+            let imageUrl = item.image;
+            if (imageUrl && imageUrl.startsWith('/uploads/')) {
+              imageUrl = `https://wechat-mall-demo.vercel.app${imageUrl}`;
+            }
+            return { ...item, image: imageUrl };
+          });
+        };
+        
+        this.setData({
+          hotProducts: fixImageUrl(cachedData.hotProducts || []),
+          newProducts: fixImageUrl(cachedData.newProducts || []),
+          categories: cachedData.categories || [],
+          loading: false,
+          isRequesting: false
+        })
+        
+        wx.showToast({
+          title: '使用离线数据',
+          icon: 'none',
+          duration: 2000
+        })
+        return
+      }
+      
       this.setData({
         loading: false,
-        error: true
+        error: true,
+        isRequesting: false
       })
 
       // 显示错误提示
@@ -80,13 +158,13 @@ Page({
         duration: 2000
       })
 
-      // 5秒后自动重试一次
+      // 20秒后自动重试一次，避免频繁重试
       setTimeout(() => {
-        if (this.data.error) {
+        if (this.data.error && !this.data.isRequesting) {
           console.log('自动重试加载首页数据...')
           this.loadHomeData()
         }
-      }, 5000)
+      }, 20000)
     }
   },
 
@@ -103,7 +181,7 @@ Page({
     if (!openId) return
 
     try {
-      const parkingData = await api.getParkingStatus(openId)
+      const parkingData = await getParkingInfo(openId)
       if (parkingData.success && parkingData.data) {
         this.setData({
           parkingInfo: parkingData.data
@@ -187,5 +265,21 @@ Page({
     wx.navigateTo({
       url: `/pages/notice-detail/notice-detail?id=${id}`
     })
+  },
+
+  // 图片加载错误处理
+  onImageError(e) {
+    const { type, index } = e.currentTarget.dataset;
+    const defaultImage = '/images/default-category.svg';
+    
+    if (type === 'hot' && this.data.hotProducts[index]) {
+      const hotProducts = this.data.hotProducts;
+      hotProducts[index].image = defaultImage;
+      this.setData({ hotProducts });
+    } else if (type === 'new' && this.data.newProducts[index]) {
+      const newProducts = this.data.newProducts;
+      newProducts[index].image = defaultImage;
+      this.setData({ newProducts });
+    }
   }
 }) 

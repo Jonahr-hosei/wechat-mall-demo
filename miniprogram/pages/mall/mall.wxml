@@ -20,10 +20,10 @@
       <view class="category-list">
         <view 
           wx:for="{{categories}}" 
-          wx:key="id"
-          class="category-item {{selectedCategory === item.id ? 'active' : ''}}" 
-          bindtap="selectCategory" 
-          data-category="{{item.id}}"
+          wx:key="index"
+          class="category-item {{currentCategory === item.id ? 'active' : ''}}" 
+          bindtap="onCategoryTap" 
+          data-id="{{item.id}}"
         >
           {{item.name}}
         </view>
@@ -36,7 +36,7 @@
     <view 
       class="product-card" 
       wx:for="{{products}}" 
-      wx:key="id" 
+      wx:key="index" 
       style="width:48%;display:inline-block;margin:1% 1% 10px 1%;vertical-align:top;"
       bindtap="goToProductDetail"
       data-id="{{item.id}}"
@@ -46,6 +46,8 @@
         src="{{item.image}}" 
         mode="aspectFill"
         wx:if="{{item.image}}"
+        binderror="onImageError"
+        data-index="{{index}}"
       ></image>
       <view class="no-image" wx:else>
         <text>暂无图片</text>

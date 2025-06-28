@@ -1,6 +1,6 @@
 // mall.js
 const app = getApp()
-const { api } = require('../../utils/request.js')
+const { getCategories, getProducts } = require('../../utils/request.js')
 
 Page({
   data: {
@@ -15,9 +15,16 @@ Page({
     cartCount: 0
   },
 
-  onLoad() {
+  onLoad(options) {
+    // 接收URL参数，支持从首页跳转时自动选中分类
+    if (options.categoryId && options.categoryName) {
+      this.setData({
+        currentCategory: options.categoryId
+      })
+      console.log('从首页跳转，选中分类:', options.categoryName)
+    }
+    
     this.loadCategories()
-    this.loadProducts()
     this.updateCartCount()
   },
 
@@ -34,7 +41,7 @@ Page({
         mask: true
       })
       
-      const categoriesData = await api.getCategories()
+      const categoriesData = await getCategories()
       if (categoriesData.success) {
         // 对分类进行去重处理
         const uniqueCategories = [];
@@ -48,6 +55,9 @@ Page({
         // 在最前面插入"全部"
         uniqueCategories.unshift({ id: 'all', name: '全部' });
         this.setData({ categories: uniqueCategories });
+        
+        // 分类加载完成后，重新加载商品（确保分类筛选生效）
+        this.loadProducts(true)
       }
     } catch (error) {
       console.error('加载分类失败', error);
@@ -56,7 +66,8 @@ Page({
         icon: 'none',
         duration: 2000
       })
-      // 不再使用本地分类，分类加载失败时categories保持为空
+      // 分类加载失败时，仍然尝试加载商品
+      this.loadProducts(true)
     } finally {
       wx.hideLoading()
     }
@@ -92,7 +103,7 @@ Page({
     }
 
     try {
-      const productsData = await api.getProducts(params)
+      const productsData = await getProducts(params)
       if (productsData.success) {
         console.log('商品数据:', productsData.data) // 调试日志
         // 修正分类字段为字符串，若无category_name则通过category_id查找
@@ -105,7 +116,19 @@ Page({
           if (!categoryName && item.category_id && categoriesMap[item.category_id]) {
             categoryName = categoriesMap[item.category_id];
           }
-          return { ...item, category_name: categoryName || '' };
+          
+          // 修复图片路径
+          let imageUrl = item.image;
+          if (imageUrl && imageUrl.startsWith('/uploads/')) {
+            // 如果是本地路径，转换为完整的Vercel URL
+            imageUrl = `https://wechat-mall-demo.vercel.app${imageUrl}`;
+          }
+          
+          return { 
+            ...item, 
+            category_name: categoryName || '',
+            image: imageUrl
+          };
         });
         const allProducts = refresh ? newProducts : [...this.data.products, ...newProducts];
         this.setData({
@@ -197,19 +220,6 @@ Page({
     })
   },
 
-  // 选择分类
-  selectCategory(e) {
-    const { category } = e.currentTarget.dataset;
-    this.setData({
-      selectedCategory: category,
-      products: [],
-      page: 1,
-      hasMore: true
-    });
-    // 重新加载商品，传递分类参数
-    this.loadProducts(true);
-  },
-
   // 导航到购物车
   navigateToCart() {
     wx.navigateTo({
@@ -230,5 +240,17 @@ Page({
         });
       }).exec();
     }, 300);
-  }
+  },
+
+  // 图片加载错误处理
+  onImageError(e) {
+    const index = e.currentTarget.dataset.index;
+    const products = this.data.products;
+    if (products[index]) {
+      products[index].image = '/images/default-category.svg'; // 使用默认图片
+      this.setData({
+        products: products
+      });
+    }
+  },
 }) 
