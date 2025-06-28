@@ -1,0 +1,98 @@
+.admin-users-page {
+  padding: 24px;
+}
+
+.admin-users-page .ant-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.admin-users-page .ant-statistic {
+  text-align: center;
+}
+
+.admin-users-page .ant-table {
+  margin-top: 16px;
+}
+
+.admin-users-page .ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+}
+
+.admin-users-page .ant-tag {
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.admin-users-page .ant-btn-link {
+  padding: 4px 8px;
+  height: auto;
+}
+
+.admin-users-page .ant-modal-content {
+  border-radius: 8px;
+}
+
+.admin-users-page .ant-form-item-label > label {
+  font-weight: 500;
+}
+
+.admin-users-page .ant-input,
+.admin-users-page .ant-select-selector {
+  border-radius: 6px;
+}
+
+.admin-users-page .ant-btn {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.admin-users-page .ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.admin-users-page .ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.admin-users-page .ant-card-head {
+  border-bottom: 1px solid #f0f0f0;
+  background-color: #fafafa;
+}
+
+.admin-users-page .ant-statistic-title {
+  color: #666;
+  font-size: 14px;
+}
+
+.admin-users-page .ant-statistic-content {
+  color: #1890ff;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.admin-users-page .ant-table-tbody > tr:hover > td {
+  background-color: #f5f5f5;
+}
+
+.admin-users-page .ant-pagination-item-active {
+  border-color: #667eea;
+}
+
+.admin-users-page .ant-pagination-item-active a {
+  color: #667eea;
+}
+
+.admin-users-page .ant-select-focused .ant-select-selector {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.admin-users-page .ant-input:focus,
+.admin-users-page .ant-input-focused {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+} 

@@ -6,6 +6,7 @@ import {
   ShoppingOutlined,
   ShoppingCartOutlined,
   UserOutlined,
+  TeamOutlined,
   GiftOutlined,
   CarOutlined,
   BarChartOutlined,
@@ -44,7 +45,12 @@ const Layout = () => {
     {
       key: '/users',
       icon: React.createElement(UserOutlined),
-      label: '用户管理',
+      label: '小程序用户',
+    },
+    {
+      key: '/admin-users',
+      icon: React.createElement(TeamOutlined),
+      label: '后台用户',
     },
     {
       key: '/points',

@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Users from './pages/Users';
+import AdminUsers from './pages/AdminUsers';
 import Points from './pages/Points';
 import Parking from './pages/Parking';
 import Statistics from './pages/Statistics';
@@ -40,6 +41,7 @@ function App() {
                 <Route path="products" element={<Products />} />
                 <Route path="orders" element={<Orders />} />
                 <Route path="users" element={<Users />} />
+                <Route path="admin-users" element={<AdminUsers />} />
                 <Route path="points" element={<Points />} />
                 <Route path="parking" element={<Parking />} />
                 <Route path="statistics" element={<Statistics />} />

@@ -26,6 +26,7 @@ import {
   EyeOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 import './Products.css';
 
 const { Option } = Select;
@@ -49,6 +50,10 @@ const Products = () => {
   const [searchStatus, setSearchStatus] = useState('');
   const [sortField, setSortField] = useState(null);
   const [sortOrder, setSortOrder] = useState(null);
+  
+  // 获取用户权限
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     fetchProducts();
@@ -322,23 +327,27 @@ const Products = () => {
           >
             查看
           </Button>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => showModal(record)}
-          >
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定要删除这个商品吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" danger icon={<DeleteOutlined />}>
-              删除
-            </Button>
-          </Popconfirm>
+          {isAdmin && (
+            <>
+              <Button
+                type="link"
+                icon={<EditOutlined />}
+                onClick={() => showModal(record)}
+              >
+                编辑
+              </Button>
+              <Popconfirm
+                title="确定要删除这个商品吗？"
+                onConfirm={() => handleDelete(record.id)}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button type="link" danger icon={<DeleteOutlined />}>
+                  删除
+                </Button>
+              </Popconfirm>
+            </>
+          )}
         </Space>
       ),
     },
@@ -399,27 +408,37 @@ const Products = () => {
             </Select>
           </Col>
           <Col>
-            <Button type="primary" onClick={handleSearch} style={{ marginRight: 8 }}>搜索</Button>
-            <Button onClick={handleReset}>重置</Button>
-          </Col>
-          <Col flex="auto" style={{ textAlign: 'right' }}>
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              disabled={selectedRowKeys.length === 0}
-              onClick={handleBatchDelete}
-            >
-              批量删除
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => showModal()}
-              style={{ marginLeft: 8 }}
-            >
-              添加商品
+            <Button type="primary" onClick={handleSearch}>
+              搜索
             </Button>
           </Col>
+          <Col>
+            <Button onClick={handleReset}>
+              重置
+            </Button>
+          </Col>
+          {isAdmin && (
+            <>
+              <Col>
+                <Button 
+                  type="primary" 
+                  icon={<PlusOutlined />}
+                  onClick={() => showModal()}
+                >
+                  添加商品
+                </Button>
+              </Col>
+              <Col>
+                <Button 
+                  danger 
+                  onClick={handleBatchDelete}
+                  disabled={selectedRowKeys.length === 0}
+                >
+                  批量删除 ({selectedRowKeys.length})
+                </Button>
+              </Col>
+            </>
+          )}
         </Row>
 
         <Table
@@ -427,13 +446,15 @@ const Products = () => {
           dataSource={products}
           rowKey="id"
           loading={loading}
-          rowSelection={rowSelection}
+          rowSelection={isAdmin ? rowSelection : undefined}
           pagination={{
-            ...pagination,
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) =>
-              `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
+            showTotal: (total, range) => 
+              `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
           }}
           onChange={handleTableChange}
         />
