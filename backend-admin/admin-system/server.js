@@ -108,6 +108,44 @@ app.get('/test-db', async (req, res) => {
   }
 });
 
+// 路由测试端点
+app.get('/test-routes', (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: '路由测试',
+      availableRoutes: [
+        '/api/auth',
+        '/api/products',
+        '/api/orders',
+        '/api/users',
+        '/api/points',
+        '/api/parking',
+        '/api/statistics',
+        '/api/mall'
+      ],
+      statisticsRoutes: [
+        '/api/statistics/overview',
+        '/api/statistics/today',
+        '/api/statistics/orders/status',
+        '/api/statistics/products/categories',
+        '/api/statistics/sales/trend',
+        '/api/statistics/product-ranking',
+        '/api/statistics/user-activity',
+        '/api/statistics/parking-usage'
+      ],
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('路由测试错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '路由测试失败',
+      error: error.message
+    });
+  }
+});
+
 // 路由
 try {
   console.log('📁 加载路由...');
