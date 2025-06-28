@@ -305,4 +305,145 @@ router.get('/sales/trend', async (req, res) => {
   }
 });
 
+// 获取商品销售排行
+router.get('/product-ranking', async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+
+    // 获取商品销售排行
+    const { data: products, error } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        price,
+        sales,
+        categories(name)
+      `)
+      .order('sales', { ascending: false })
+      .limit(parseInt(limit));
+
+    if (error) {
+      console.error('Supabase商品排行查询错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: products || []
+    });
+  } catch (error) {
+    console.error('获取商品排行错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 获取用户活跃度统计
+router.get('/user-activity', async (req, res) => {
+  try {
+    const { days = 30 } = req.query;
+    const today = new Date();
+    const startDate = new Date(today.getTime() - parseInt(days) * 24 * 60 * 60 * 1000);
+
+    // 获取用户注册趋势
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('created_at')
+      .gte('created_at', startDate.toISOString())
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Supabase用户活跃度查询错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    // 按日期分组
+    const dailyUsers = {};
+    users.forEach(user => {
+      const date = new Date(user.created_at).toISOString().split('T')[0];
+      dailyUsers[date] = (dailyUsers[date] || 0) + 1;
+    });
+
+    // 转换为数组格式
+    const activityData = Object.keys(dailyUsers).map(date => ({
+      date,
+      new_users: dailyUsers[date]
+    })).sort((a, b) => a.date.localeCompare(b.date));
+
+    res.json({
+      success: true,
+      data: activityData
+    });
+  } catch (error) {
+    console.error('获取用户活跃度错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
+// 获取停车使用统计
+router.get('/parking-usage', async (req, res) => {
+  try {
+    const { days = 7 } = req.query;
+    const today = new Date();
+    const startDate = new Date(today.getTime() - parseInt(days) * 24 * 60 * 60 * 1000);
+
+    // 获取停车记录
+    const { data: records, error } = await supabase
+      .from('parking_records')
+      .select('created_at, fee')
+      .gte('created_at', startDate.toISOString())
+      .eq('status', 'completed')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Supabase停车使用查询错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    // 按日期分组
+    const dailyUsage = {};
+    records.forEach(record => {
+      const date = new Date(record.created_at).toISOString().split('T')[0];
+      if (!dailyUsage[date]) {
+        dailyUsage[date] = { usage_count: 0, revenue: 0 };
+      }
+      dailyUsage[date].usage_count += 1;
+      dailyUsage[date].revenue += record.fee || 0;
+    });
+
+    // 转换为数组格式
+    const usageData = Object.keys(dailyUsage).map(date => ({
+      date,
+      usage_count: dailyUsage[date].usage_count,
+      revenue: dailyUsage[date].revenue
+    })).sort((a, b) => a.date.localeCompare(b.date));
+
+    res.json({
+      success: true,
+      data: usageData
+    });
+  } catch (error) {
+    console.error('获取停车使用统计错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
 module.exports = router; 

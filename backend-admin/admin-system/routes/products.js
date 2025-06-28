@@ -390,4 +390,33 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
+// 获取分类列表
+router.get('/categories/list', async (req, res) => {
+  try {
+    const { data: categories, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Supabase分类查询错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '数据库错误'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: categories || []
+    });
+  } catch (error) {
+    console.error('获取分类列表错误:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器错误'
+    });
+  }
+});
+
 module.exports = router; 
