@@ -1,5 +1,5 @@
 const app = getApp()
-const { api } = require('../../utils/request.js')
+const { getProductDetail, createOrder } = require('../../utils/request.js')
 
 Page({
   data: {
@@ -8,6 +8,8 @@ Page({
     cartCount: 0,
     selectedQuantity: 1,
     showShareMenu: false,
+    // 弹窗相关
+    showQuantityModal: false,
     // 评价相关
     reviews: [],
     reviewStats: {
@@ -44,12 +46,21 @@ Page({
     }
   },
 
+  // 监听返回键
+  onBackPress() {
+    if (this.data.showQuantityModal) {
+      this.hideQuantityModal()
+      return true // 阻止默认返回行为
+    }
+    return false
+  },
+
   // 加载商品详情
   async loadProductDetail(id) {
     this.setData({ loading: true })
     
     try {
-      const productData = await api.getProductDetail(id)
+      const productData = await getProductDetail(id)
       if (productData.success) {
         this.setData({ 
           product: productData.data,
@@ -106,8 +117,28 @@ Page({
     })
   },
 
-  // 加入购物车
-  addToCart() {
+  // 显示数量选择弹窗
+  showQuantityModal(e) {
+    this.setData({
+      showQuantityModal: true,
+      selectedQuantity: 1 // 重置数量
+    })
+  },
+
+  // 隐藏数量选择弹窗
+  hideQuantityModal() {
+    this.setData({
+      showQuantityModal: false
+    })
+  },
+
+  // 阻止事件冒泡
+  stopPropagation() {
+    // 空函数，用于阻止事件冒泡
+  },
+
+  // 确认加入购物车
+  confirmAddToCart() {
     const { product, selectedQuantity } = this.data
     let cart = wx.getStorageSync('cart') || []
     
@@ -131,15 +162,19 @@ Page({
     wx.setStorageSync('cart', cart)
     this.updateCartCount()
     
+    this.hideQuantityModal()
+    
     wx.showToast({
       title: '已加入购物车',
       icon: 'success'
     })
   },
 
-  // 立即购买
-  buyNow() {
+  // 确认立即购买
+  confirmBuyNow() {
     const { product, selectedQuantity } = this.data
+    
+    this.hideQuantityModal()
     
     // 创建订单
     this.createOrder([{
@@ -157,7 +192,7 @@ Page({
     const user_id = wx.getStorageSync('userId') || 1 // 模拟用户ID
     
     try {
-      const orderData = await api.createOrder({
+      const orderData = await createOrder({
         user_id,
         items,
         total_amount: totalAmount,
