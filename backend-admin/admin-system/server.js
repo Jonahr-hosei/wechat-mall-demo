@@ -16,6 +16,37 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'client/build')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// 根路径处理
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: '微信商城后端API服务',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      products: '/api/products',
+      orders: '/api/orders',
+      users: '/api/users',
+      points: '/api/points',
+      parking: '/api/parking',
+      statistics: '/api/statistics',
+      mall: '/api/mall'
+    },
+    status: 'running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 健康检查端点
+app.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    message: '服务运行正常',
+    status: 'healthy',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // 路由
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
