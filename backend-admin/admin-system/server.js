@@ -40,7 +40,8 @@ app.get('/', (req, res) => {
         points: '/api/points',
         parking: '/api/parking',
         statistics: '/api/statistics',
-        mall: '/api/mall'
+        mall: '/api/mall',
+        announcements: '/api/announcements'
       }
     });
   } catch (error) {
@@ -122,7 +123,13 @@ app.get('/test-routes', (req, res) => {
         '/api/points',
         '/api/parking',
         '/api/statistics',
-        '/api/mall'
+        '/api/mall',
+        '/api/announcements'
+      ],
+      announcementsRoutes: [
+        '/api/announcements',
+        '/api/announcements/:id',
+        '/api/announcements/home/list'
       ],
       statisticsRoutes: [
         '/api/statistics/overview',
@@ -189,6 +196,11 @@ try {
   const mallRoutes = require('./routes/mall');
   app.use('/api/mall', mallRoutes);
   console.log('✅ 商城路由加载完成');
+
+  // 公告路由
+  const announcementsRoutes = require('./routes/announcements');
+  app.use('/api/announcements', announcementsRoutes);
+  console.log('✅ 公告路由加载完成');
 
 } catch (error) {
   console.error('❌ 路由加载失败:', error);
