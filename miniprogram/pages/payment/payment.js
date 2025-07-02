@@ -1,6 +1,14 @@
-const app = getApp()
+const { safeGetApp, safePage } = require('../../utils/util.js')
+const util = require('../../utils/util.js')
 
-Page({
+const app = safeGetApp()
+
+// 安全的获取baseUrl函数
+const getBaseUrl = () => {
+  return app && app.globalData && app.globalData.baseUrl ? app.globalData.baseUrl : 'https://wxmall.shop'
+}
+
+safePage({
   data: {
     orderId: '',
     orderNo: '',
@@ -85,7 +93,7 @@ Page({
 
     // 首先调用后端创建支付订单
     wx.request({
-      url: `${app.globalData.baseUrl}/orders/${orderId}/pay`,
+      url: `${getBaseUrl()}/orders/${orderId}/pay`,
       method: 'POST',
       data: {
         payment_method: 'wechat',

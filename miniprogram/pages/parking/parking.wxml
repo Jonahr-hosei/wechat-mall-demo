@@ -25,7 +25,7 @@
 
   <!-- 无停车记录 -->
   <view class="no-parking" wx:else>
-    <image src="/images/no-parking.png" class="no-parking-image"/>
+    <image src="/images/parking.svg" class="no-parking-image"/>
     <text class="no-parking-text">暂无停车记录</text>
     <text class="no-parking-desc">车辆入场后会自动显示停车信息</text>
   </view>

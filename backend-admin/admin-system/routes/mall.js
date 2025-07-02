@@ -838,8 +838,6 @@ router.get('/orders/:id/status', async (req, res) => {
 // 获取首页数据
 router.get('/home', async (req, res) => {
   try {
-    console.log('🏠 开始获取首页数据...');
-
     // 获取热门商品
     const { data: hotProducts, error: hotError } = await supabase
       .from('products')
@@ -855,8 +853,6 @@ router.get('/home', async (req, res) => {
         message: '获取首页数据失败'
       });
     }
-
-    console.log(`✅ 热门商品查询成功，共 ${hotProducts?.length || 0} 条`);
 
     // 获取最新商品
     const { data: newProducts, error: newError } = await supabase
@@ -874,27 +870,7 @@ router.get('/home', async (req, res) => {
       });
     }
 
-    console.log(`✅ 最新商品查询成功，共 ${newProducts?.length || 0} 条`);
-
-    // 获取公告 - 添加详细日志
-    console.log('📢 开始查询公告数据...');
-    
-    // 先查询所有公告，看看表是否有数据
-    const { data: allAnnouncements, error: allAnnouncementError } = await supabase
-      .from('announcements')
-      .select('*');
-
-    if (allAnnouncementError) {
-      console.error('❌ 查询所有公告失败:', allAnnouncementError);
-      return res.status(500).json({
-        success: false,
-        message: '获取首页数据失败'
-      });
-    }
-
-    console.log(`📊 公告表总共有 ${allAnnouncements?.length || 0} 条记录`);
-
-    // 查询启用的公告
+    // 获取公告
     const { data: announcements, error: announcementError } = await supabase
       .from('announcements')
       .select('id, title, type, created_at')
@@ -904,14 +880,12 @@ router.get('/home', async (req, res) => {
       .limit(5);
 
     if (announcementError) {
-      console.error('❌ Supabase公告查询错误:', announcementError);
+      console.error('Supabase公告查询错误:', announcementError);
       return res.status(500).json({
         success: false,
         message: '获取首页数据失败'
       });
     }
-
-    console.log(`✅ 启用公告查询成功，共 ${announcements?.length || 0} 条`);
 
     // 修复商品图片路径
     const fixImageUrl = (products) => {
@@ -935,29 +909,16 @@ router.get('/home', async (req, res) => {
       })
     }));
 
-    console.log(`📅 公告时间格式化完成，共 ${formattedAnnouncements.length} 条`);
-
-    const responseData = {
-      hotProducts: fixImageUrl(hotProducts || []),
-      newProducts: fixImageUrl(newProducts || []),
-      announcements: formattedAnnouncements
-    };
-
-    console.log('🎉 首页数据准备完成，准备发送响应...');
-    console.log(`📊 响应数据统计:`);
-    console.log(`   - 热门商品: ${responseData.hotProducts.length} 条`);
-    console.log(`   - 最新商品: ${responseData.newProducts.length} 条`);
-    console.log(`   - 公告: ${responseData.announcements.length} 条`);
-
     res.json({
       success: true,
-      data: responseData
+      data: {
+        hotProducts: fixImageUrl(hotProducts || []),
+        newProducts: fixImageUrl(newProducts || []),
+        announcements: formattedAnnouncements
+      }
     });
-
-    console.log('✅ 首页数据响应发送成功');
-
   } catch (error) {
-    console.error('❌ 获取首页数据错误:', error);
+    console.error('获取首页数据错误:', error);
     res.status(500).json({
       success: false,
       message: '服务器错误'

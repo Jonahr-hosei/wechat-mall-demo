@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 // 配置 axios 基础 URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://wechat-mall-demo.vercel.app';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://wxmall.shop';
 axios.defaults.baseURL = API_BASE_URL;
 
 const AuthContext = createContext();

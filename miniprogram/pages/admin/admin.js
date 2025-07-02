@@ -1,9 +1,11 @@
 // admin.js
-const app = getApp()
+const { safeGetApp, safePage } = require('../../utils/util.js')
 const http = require('../../utils/request.js')
 const util = require('../../utils/util.js')
 
-Page({
+const app = safeGetApp()
+
+safePage({
   data: {
     isLoggedIn: false,
     username: '',

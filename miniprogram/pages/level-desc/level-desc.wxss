@@ -1,0 +1,103 @@
+.level-desc-card {
+  background: #fff;
+  border-radius: 20rpx;
+  margin: 32rpx 24rpx;
+  padding: 32rpx 24rpx;
+  box-shadow: 0 4rpx 24rpx #eee;
+}
+.level-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 24rpx;
+  color: #232946;
+}
+.level-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18rpx;
+}
+.level-badge.mini {
+  font-size: 18rpx;
+  padding: 2rpx 8rpx;
+  margin-right: 16rpx;
+  height: 24rpx;
+  line-height: 24rpx;
+  background: linear-gradient(90deg, #ffd700 0%, #ffb300 100%);
+  color: #232946;
+  border-radius: 20rpx;
+}
+.level-desc {
+  color: #232946;
+  font-size: 24rpx;
+}
+.level-tip {
+  margin-top: 24rpx;
+  color: #ff9800;
+  font-size: 24rpx;
+  text-align: center;
+}
+.level-header {
+  background: linear-gradient(120deg, #23262f 0%, #3a3d4d 100%);
+  padding: 48rpx 32rpx 32rpx 32rpx;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 32rpx;
+  border-bottom-right-radius: 32rpx;
+  color: #f8f8f8;
+  text-align: left;
+}
+.level-header-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #f8f8b0;
+  margin-bottom: 18rpx;
+}
+.level-header-desc {
+  font-size: 26rpx;
+  color: #f8f8f8;
+  margin-bottom: 6rpx;
+}
+.level-table {
+  background: #fff;
+  border-radius: 24rpx;
+  margin: 32rpx 24rpx 0 24rpx;
+  box-shadow: 0 4rpx 24rpx #eee;
+  overflow: hidden;
+}
+.level-table-header {
+  display: flex;
+  background: #f7f7f7;
+  font-weight: bold;
+  font-size: 28rpx;
+  color: #232946;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+.level-table-row {
+  display: flex;
+  font-size: 26rpx;
+  color: #232946;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+  align-items: center;
+}
+.level-table-row:last-child {
+  border-bottom: none;
+}
+.level-table-col {
+  flex: 1;
+  text-align: center;
+}
+.rule-col {
+  flex: 1.5;
+  color: #b8862a;
+  background: #fdf6e3;
+  border-radius: 12rpx;
+  padding: 8rpx 0;
+}
+.level-note {
+  margin: 32rpx 24rpx 0 24rpx;
+  color: #888;
+  font-size: 22rpx;
+  text-align: left;
+} 

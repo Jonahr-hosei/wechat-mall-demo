@@ -1,7 +1,15 @@
 // points.js
-const app = getApp()
+const { safeGetApp, safePage } = require('../../utils/util.js')
+const util = require('../../utils/util.js')
 
-Page({
+const app = safeGetApp()
+
+// 安全的获取baseUrl函数
+const getBaseUrl = () => {
+  return app && app.globalData && app.globalData.baseUrl ? app.globalData.baseUrl : 'https://wxmall.shop'
+}
+
+safePage({
   data: {
     userPoints: 0,
     dailyTasks: [],
@@ -28,7 +36,7 @@ Page({
     if (!openId) return
 
     wx.request({
-      url: `${app.globalData.baseUrl}/points/balance`,
+      url: `${getBaseUrl()}/points/balance`,
       method: 'GET',
       data: { openId: openId },
       success: (res) => {
@@ -54,7 +62,7 @@ Page({
     if (!openId) return
 
     wx.request({
-      url: `${app.globalData.baseUrl}/points/tasks`,
+      url: `${getBaseUrl()}/points/tasks`,
       method: 'GET',
       data: { openId: openId },
       success: (res) => {
@@ -110,7 +118,7 @@ Page({
   // 加载兑换商品
   loadExchangeItems() {
     wx.request({
-      url: `${app.globalData.baseUrl}/points/exchange-items`,
+      url: `${getBaseUrl()}/points/exchange-items`,
       method: 'GET',
       data: { limit: 10 },
       success: (res) => {
@@ -165,7 +173,7 @@ Page({
     if (!openId) return
 
     wx.request({
-      url: `${app.globalData.baseUrl}/points/history`,
+      url: `${getBaseUrl()}/points/history`,
       method: 'GET',
       data: {
         openId: openId,
@@ -223,7 +231,7 @@ Page({
     const openId = wx.getStorageSync('openId')
     
     wx.request({
-      url: `${app.globalData.baseUrl}/points/complete-task`,
+      url: `${getBaseUrl()}/points/complete-task`,
       method: 'POST',
       data: {
         openId: openId,
@@ -280,7 +288,7 @@ Page({
     const openId = wx.getStorageSync('openId')
     
     wx.request({
-      url: `${app.globalData.baseUrl}/points/exchange`,
+      url: `${getBaseUrl()}/points/exchange`,
       method: 'POST',
       data: {
         openId: openId,

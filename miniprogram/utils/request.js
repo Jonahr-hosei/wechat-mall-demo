@@ -1,112 +1,44 @@
-const app = getApp()
-
-// 请求基础配置
+// 基础配置
 const baseConfig = {
-  baseUrl: 'https://wechat-mall-demo.vercel.app/api/mall', // 云端后端服务API地址
-  timeout: 15000, // 减少超时时间到15秒
-  header: {
-    'Content-Type': 'application/json'
+  baseUrl: 'https://wxmall.shop',
+  timeout: 15000,
+  maxRetries: 2
+};
+
+// 开发环境检测
+const isDevelopment = () => {
+  try {
+    // 使用新的API替代已弃用的wx.getSystemInfoSync
+    const systemInfo = wx.getAppBaseInfo()
+    return systemInfo.platform === 'devtools'
+  } catch (error) {
+    return false
   }
 }
 
-// 请求拦截器
-const requestInterceptor = (config) => {
-  // 添加token
-  const token = wx.getStorageSync('token')
-  if (token) {
-    config.header.Authorization = `Bearer ${token}`
-  }
-  
-  // 添加openId
-  const openId = wx.getStorageSync('openId')
-  if (openId) {
-    config.data = config.data || {}
-    config.data.openId = openId
-  }
-  
-  return config
-}
-
-// 响应拦截器
-const responseInterceptor = (response) => {
-  const { statusCode, data } = response
-  
-  if (statusCode === 200) {
-    if (data.success) {
-      return data
-    } else {
-      // 业务错误
-      wx.showToast({
-        title: data.message || '请求失败',
-        icon: 'none'
-      })
-      return Promise.reject(data)
-    }
-  } else if (statusCode === 401) {
-    // 未授权，重新登录
-    wx.removeStorageSync('token')
-    wx.removeStorageSync('openId')
-    wx.showToast({
-      title: '请重新登录',
-      icon: 'none'
-    })
-    return Promise.reject(response)
-  } else {
-    // 网络错误
-    wx.showToast({
-      title: '网络错误',
-      icon: 'none'
-    })
-    return Promise.reject(response)
-  }
-}
-
-// 检查网络状态
-const checkNetworkStatus = () => {
-  return new Promise((resolve) => {
-    wx.getNetworkType({
-      success: (res) => {
-        console.log('网络类型:', res.networkType)
-        if (res.networkType === 'none') {
-          wx.showToast({
-            title: '请检查网络连接',
-            icon: 'none',
-            duration: 2000
-          })
-          resolve(false)
-        } else {
-          resolve(true)
-        }
-      },
-      fail: () => {
-        resolve(false)
-      }
-    })
-  })
-}
-
-// 请求封装
-const request = (options) => {
+// 带重试的请求方法
+const requestWithRetry = (options, retryCount = 0) => {
   return new Promise(async (resolve, reject) => {
-    // 检查网络状态
-    const isNetworkAvailable = await checkNetworkStatus()
-    if (!isNetworkAvailable) {
-      reject(new Error('网络连接不可用'))
-      return
-    }
-
     // 显示加载提示
-    if (options.showLoading !== false) {
+    if (options.showLoading !== false && retryCount === 0) {
       wx.showLoading({
         title: '加载中...',
         mask: true
       })
     }
 
-    console.log('发起请求:', baseConfig.baseUrl + options.url, options.data)
+    const requestUrl = baseConfig.baseUrl + options.url
+    console.log(`发起请求 (第${retryCount + 1}次):`, requestUrl, options.data)
 
+    // 开发环境提示
+    if (isDevelopment()) {
+      console.log('⚠️ 开发环境提示：请确保已在微信公众平台配置域名白名单')
+      console.log('域名：https://wxmall.shop')
+    }
+
+    // 发起请求
     wx.request({
-      url: baseConfig.baseUrl + options.url,
+      url: requestUrl,
       method: options.method || 'GET',
       data: options.data || {},
       header: {
@@ -114,157 +46,123 @@ const request = (options) => {
         ...options.header
       },
       timeout: baseConfig.timeout,
+      enableHttp2: true,
+      enableQuic: true,
       success: (res) => {
-        wx.hideLoading()
         console.log('请求成功:', res)
+        if (retryCount === 0) {
+          wx.hideLoading()
+        }
         
         if (res.statusCode === 200) {
-          if (res.data.success) {
+          if (res.data && res.data.success !== undefined) {
             resolve(res.data);
           } else {
-            wx.showToast({
-              title: res.data.message || '请求失败',
-              icon: 'none'
-            })
-            reject(new Error(res.data.message || '请求失败'));
+            resolve(res.data);
           }
         } else {
-          wx.showToast({
-            title: `网络错误: ${res.statusCode}`,
-            icon: 'none'
-          })
           reject(new Error(`HTTP错误: ${res.statusCode}`));
         }
       },
       fail: (err) => {
-        wx.hideLoading()
-        console.error('请求失败:', err)
+        console.error(`请求失败 (第${retryCount + 1}次):`, err)
         
-        // 根据错误类型显示不同提示
+        if (retryCount === baseConfig.maxRetries) {
+          wx.hideLoading()
+        }
+        
         let errorMsg = '网络请求失败'
         if (err.errMsg) {
           if (err.errMsg.includes('timeout')) {
             errorMsg = '请求超时，请检查网络'
           } else if (err.errMsg.includes('fail')) {
             errorMsg = '网络连接失败'
-          } else if (err.errMsg.includes('ssl')) {
-            errorMsg = 'SSL证书验证失败'
+          } else {
+            errorMsg = err.errMsg
           }
         }
         
-        wx.showToast({
-          title: errorMsg,
-          icon: 'none',
-          duration: 2000
-        })
-        reject(new Error(errorMsg));
+        if (retryCount < baseConfig.maxRetries) {
+          console.log(`准备重试请求 (${retryCount + 1}/${baseConfig.maxRetries})`)
+          setTimeout(() => {
+            requestWithRetry(options, retryCount + 1)
+              .then(resolve)
+              .catch(reject)
+          }, 1000 * (retryCount + 1))
+        } else {
+          if (isDevelopment()) {
+            wx.showModal({
+              title: '网络请求失败',
+              content: `请检查网络连接和域名配置\n错误: ${errorMsg}`,
+              showCancel: false
+            })
+          } else {
+            wx.showToast({
+              title: errorMsg,
+              icon: 'none',
+              duration: 3000
+            })
+          }
+          reject(new Error(errorMsg))
+        }
       }
     });
   });
 };
 
-// API方法
-const api = {
-  // 商品相关
-  getCategories: () => request({ url: '/categories' }),
-  
-  getProducts: (params) => request({ 
-    url: '/products',
-    data: params
-  }),
-  
-  getProductDetail: (id) => request({ 
-    url: `/products/${id}` 
-  }),
-
-  // 订单相关
-  createOrder: (orderData) => request({
-    url: '/orders',
-    method: 'POST',
-    data: orderData
-  }),
-
-  payOrder: (orderId, paymentData) => request({
-    url: `/orders/${orderId}/pay`,
-    method: 'POST',
-    data: paymentData
-  }),
-
-  getUserOrders: (userId, params) => request({
-    url: `/orders`,
-    data: { user_id: userId, ...params }
-  }),
-
-  getOrderDetail: (orderId) => request({
-    url: `/orders/${orderId}`
-  }),
-
-  cancelOrder: (orderId) => request({
-    url: `/orders/${orderId}/cancel`,
-    method: 'POST'
-  }),
-
-  // 用户相关
-  getUserInfo: (openId) => request({
-    url: `/user/${openId}`
-  }),
-
-  createUser: (userData) => request({
-    url: '/user',
-    method: 'POST',
-    data: userData
-  }),
-
-  // 积分相关
-  getUserPoints: (userId) => request({
-    url: `/points/${userId}`
-  }),
-
-  getPointRecords: (userId, params) => request({
-    url: `/points/${userId}/records`,
-    data: params
-  }),
-
-  // 停车相关
-  getParkingStatus: (userId) => request({
-    url: `/parking/${userId}`
-  }),
-
-  startParking: (parkingData) => request({
-    url: '/parking/entry',
-    method: 'POST',
-    data: parkingData
-  }),
-
-  endParking: (recordId) => request({
-    url: `/parking/exit/${recordId}`,
-    method: 'POST'
-  }),
-
-  payParking: (recordId, paymentData) => request({
-    url: `/parking/exit/${recordId}`,
-    method: 'POST',
-    data: paymentData
-  }),
-
-  getParkingHistory: (userId, params) => request({
-    url: `/parking/${userId}`,
-    data: params
-  }),
-
-  // 首页数据
-  getHomeData: () => request({
-    url: '/home',
-    showLoading: false // 首页不显示loading
-  }),
-
-  // 订单状态查询
-  getOrderStatus: (orderId) => request({
-    url: `/orders/${orderId}/status`
-  })
+// 简化的请求方法
+const request = (options) => {
+  return requestWithRetry(options, 0);
 };
+
+// API方法
+const getHomeData = () => request({ url: '/api/mall/home' })
+const getProducts = (params) => request({ url: '/api/mall/products', data: params })
+const getProductDetail = (id) => request({ url: `/api/mall/products/${id}` })
+const getCategories = () => request({ url: '/api/mall/categories' })
+const getOrders = (params) => request({ url: '/api/orders', data: params })
+const getOrderDetail = (id) => request({ url: `/api/orders/${id}` })
+const createOrder = (data) => request({ url: '/api/orders', method: 'POST', data })
+const updateOrder = (id, data) => request({ url: `/api/orders/${id}`, method: 'PUT', data })
+const deleteOrder = (id) => request({ url: `/api/orders/${id}`, method: 'DELETE' })
+const getUserInfo = (id) => request({ url: `/api/users/${id}` })
+const updateUserInfo = (id, data) => request({ url: `/api/users/${id}`, method: 'PUT', data })
+const getPoints = (userId) => request({ url: `/api/points/${userId}` })
+const addPoints = (userId, data) => request({ url: `/api/points/${userId}/add`, method: 'POST', data })
+const usePoints = (userId, data) => request({ url: `/api/points/${userId}/use`, method: 'POST', data })
+const getParkingInfo = (userId) => request({ url: `/api/parking/${userId}` })
+const startParking = (data) => request({ url: '/api/parking/start', method: 'POST', data })
+const endParking = (id) => request({ url: `/api/parking/${id}/end`, method: 'POST' })
+const payParking = (id, data) => request({ url: `/api/parking/${id}/pay`, method: 'POST', data })
+const getParkingHistory = (userId, params) => request({ url: `/api/parking/${userId}/history`, data: params })
+
+// 公告相关API
+const getAnnouncements = (params) => request({ url: '/api/announcements', data: params })
+const getAnnouncementDetail = (id) => request({ url: `/api/announcements/${id}` })
+const getHomeAnnouncements = (params) => request({ url: '/api/announcements/home/list', data: params })
 
 module.exports = {
   request,
-  api
+  getHomeData,
+  getProducts,
+  getProductDetail,
+  getCategories,
+  getOrders,
+  getOrderDetail,
+  createOrder,
+  updateOrder,
+  deleteOrder,
+  getUserInfo,
+  updateUserInfo,
+  getPoints,
+  addPoints,
+  usePoints,
+  getParkingInfo,
+  startParking,
+  endParking,
+  payParking,
+  getParkingHistory,
+  getAnnouncements,
+  getAnnouncementDetail,
+  getHomeAnnouncements
 }; 

@@ -1,9 +1,11 @@
 // user.js
-const app = getApp()
-const { api } = require('../../utils/request.js')
+const { safeGetApp, safePage } = require('../../utils/util.js')
+const { getUserInfo, getPoints, getOrders, getParkingInfo } = require('../../utils/request.js')
 const util = require('../../utils/util.js')
 
-Page({
+const app = safeGetApp()
+
+safePage({
   data: {
     userInfo: null,
     points: 0,
@@ -38,7 +40,7 @@ Page({
     }
 
     try {
-      const userData = await api.getUserInfo(openId)
+      const userData = await getUserInfo(openId)
       if (userData.success) {
         this.setData({ 
           userInfo: userData.data,
@@ -57,7 +59,7 @@ Page({
     if (!openId) return
 
     try {
-      const pointsData = await api.getUserPoints(openId)
+      const pointsData = await getPoints(openId)
       if (pointsData.success) {
         this.setData({ points: pointsData.data.points || 0 })
       }
@@ -72,9 +74,10 @@ Page({
     if (!openId) return
 
     try {
-      const ordersData = await api.getUserOrders(openId, { limit: 1 })
+      const ordersData = await getOrders(openId, { limit: 1 })
       if (ordersData.success) {
-        this.setData({ orderCount: ordersData.pagination?.total || 0 })
+        const total = ordersData.pagination && ordersData.pagination.total ? ordersData.pagination.total : 0
+        this.setData({ orderCount: total })
       }
     } catch (error) {
       console.error('加载订单数量失败', error)
@@ -87,7 +90,7 @@ Page({
     if (!openId) return
 
     try {
-      const parkingData = await api.getParkingStatus(openId)
+      const parkingData = await getParkingInfo(openId)
       if (parkingData.success) {
         this.setData({ parkingInfo: parkingData.data })
       }

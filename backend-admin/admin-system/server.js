@@ -40,8 +40,7 @@ app.get('/', (req, res) => {
         points: '/api/points',
         parking: '/api/parking',
         statistics: '/api/statistics',
-        mall: '/api/mall',
-        announcements: '/api/announcements'
+        mall: '/api/mall'
       }
     });
   } catch (error) {
@@ -123,13 +122,7 @@ app.get('/test-routes', (req, res) => {
         '/api/points',
         '/api/parking',
         '/api/statistics',
-        '/api/mall',
-        '/api/announcements'
-      ],
-      announcementsRoutes: [
-        '/api/announcements',
-        '/api/announcements/:id',
-        '/api/announcements/home/list'
+        '/api/mall'
       ],
       statisticsRoutes: [
         '/api/statistics/overview',

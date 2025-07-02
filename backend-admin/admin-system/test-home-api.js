@@ -1,17 +1,37 @@
-const express = require('express');
-const supabase = require('./config/database');
+const { createClient } = require('@supabase/supabase-js');
 
-const app = express();
-const PORT = 3002;
+// 从环境变量获取Supabase配置
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-app.use(express.json());
+if (!supabaseUrl || !supabaseKey) {
+  console.error('缺少Supabase环境变量配置');
+  process.exit(1);
+}
 
-// 测试首页API
-app.get('/test-home', async (req, res) => {
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function testHomeAPI() {
+  console.log('开始测试首页API...');
+  
   try {
-    console.log('🔍 测试首页API...');
-    
-    // 获取热门商品
+    // 测试获取分类
+    console.log('\n1. 测试获取分类...');
+    const { data: categories, error: categoryError } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('status', 1)
+      .order('sort_order', { ascending: true })
+      .limit(6);
+
+    if (categoryError) {
+      console.error('分类查询失败:', categoryError);
+    } else {
+      console.log('分类数据:', categories);
+    }
+
+    // 测试获取热门商品
+    console.log('\n2. 测试获取热门商品...');
     const { data: hotProducts, error: hotError } = await supabase
       .from('products')
       .select('*')
@@ -20,14 +40,13 @@ app.get('/test-home', async (req, res) => {
       .limit(8);
 
     if (hotError) {
-      console.error('Supabase热门商品查询错误:', hotError);
-      return res.status(500).json({
-        success: false,
-        message: '获取首页数据失败'
-      });
+      console.error('热门商品查询失败:', hotError);
+    } else {
+      console.log('热门商品数据:', hotProducts);
     }
 
-    // 获取最新商品
+    // 测试获取最新商品
+    console.log('\n3. 测试获取最新商品...');
     const { data: newProducts, error: newError } = await supabase
       .from('products')
       .select('*')
@@ -36,148 +55,41 @@ app.get('/test-home', async (req, res) => {
       .limit(8);
 
     if (newError) {
-      console.error('Supabase最新商品查询错误:', newError);
-      return res.status(500).json({
-        success: false,
-        message: '获取首页数据失败'
-      });
+      console.error('最新商品查询失败:', newError);
+    } else {
+      console.log('最新商品数据:', newProducts);
     }
 
-    // 获取公告
-    console.log('📢 查询公告数据...');
-    const { data: announcements, error: announcementError } = await supabase
-      .from('announcements')
-      .select('id, title, type, created_at')
-      .eq('status', 1)
-      .order('priority', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (announcementError) {
-      console.error('Supabase公告查询错误:', announcementError);
-      return res.status(500).json({
-        success: false,
-        message: '获取首页数据失败'
-      });
-    }
-
-    console.log(`✅ 公告查询成功，返回 ${announcements?.length || 0} 条`);
-
-    // 修复商品图片路径
-    const fixImageUrl = (products) => {
-      return products.map(product => {
-        let imageUrl = product.image;
-        if (imageUrl && imageUrl.startsWith('/uploads/')) {
-          imageUrl = null;
-        }
-        return { ...product, image: imageUrl };
-      });
-    };
-
-    // 格式化公告时间
-    const formattedAnnouncements = (announcements || []).map(item => ({
-      ...item,
-      time: new Date(item.created_at).toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      })
-    }));
-
-    const responseData = {
-      hotProducts: fixImageUrl(hotProducts || []),
-      newProducts: fixImageUrl(newProducts || []),
-      announcements: formattedAnnouncements
-    };
-
-    console.log('📊 响应数据统计:');
-    console.log(`   - 热门商品: ${responseData.hotProducts.length} 条`);
-    console.log(`   - 最新商品: ${responseData.newProducts.length} 条`);
-    console.log(`   - 公告: ${responseData.announcements.length} 条`);
-
-    res.json({
-      success: true,
-      data: responseData
-    });
-  } catch (error) {
-    console.error('获取首页数据错误:', error);
-    res.status(500).json({
-      success: false,
-      message: '服务器错误'
-    });
-  }
-});
-
-// 测试公告API
-app.get('/test-announcements', async (req, res) => {
-  try {
-    console.log('🔍 测试公告API...');
-    
-    // 查询所有公告
-    const { data: allAnnouncements, error: allError } = await supabase
-      .from('announcements')
-      .select('*');
-
-    if (allError) {
-      console.error('❌ 查询所有公告失败:', allError);
-      return res.status(500).json({
-        success: false,
-        message: '查询失败',
-        error: allError.message
-      });
-    }
-
-    // 查询启用的公告
-    const { data: activeAnnouncements, error: activeError } = await supabase
-      .from('announcements')
-      .select('id, title, type, created_at')
-      .eq('status', 1)
-      .order('priority', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (activeError) {
-      console.error('❌ 查询启用公告失败:', activeError);
-      return res.status(500).json({
-        success: false,
-        message: '查询失败',
-        error: activeError.message
-      });
-    }
-
-    // 格式化时间
-    const formattedAnnouncements = (activeAnnouncements || []).map(item => ({
-      ...item,
-      time: new Date(item.created_at).toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      })
-    }));
-
-    res.json({
+    // 模拟完整的首页API响应
+    console.log('\n4. 模拟首页API响应...');
+    const homeData = {
       success: true,
       data: {
-        allAnnouncements: allAnnouncements || [],
-        activeAnnouncements: formattedAnnouncements,
-        totalCount: allAnnouncements.length,
-        activeCount: activeAnnouncements.length
+        hotProducts: hotProducts || [],
+        newProducts: newProducts || [],
+        categories: categories || []
       }
-    });
+    };
+    
+    console.log('首页API响应:', JSON.stringify(homeData, null, 2));
+
+    // 检查数据是否为空
+    if (!categories || categories.length === 0) {
+      console.log('\n⚠️  警告: 分类数据为空，可能需要初始化数据');
+    }
+    
+    if (!hotProducts || hotProducts.length === 0) {
+      console.log('\n⚠️  警告: 热门商品数据为空，可能需要初始化数据');
+    }
+    
+    if (!newProducts || newProducts.length === 0) {
+      console.log('\n⚠️  警告: 最新商品数据为空，可能需要初始化数据');
+    }
 
   } catch (error) {
-    console.error('❌ API错误:', error);
-    res.status(500).json({
-      success: false,
-      message: '服务器错误',
-      error: error.message
-    });
+    console.error('测试过程中发生错误:', error);
   }
-});
+}
 
-app.listen(PORT, () => {
-  console.log(`🚀 测试服务器运行在 http://localhost:${PORT}`);
-  console.log('📋 可用端点:');
-  console.log('  - GET /test-home - 测试首页数据');
-  console.log('  - GET /test-announcements - 测试公告数据');
-}); 
+// 运行测试
+testHomeAPI(); 

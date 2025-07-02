@@ -9,12 +9,12 @@ router.get('/', async (req, res) => {
     const { page = 1, limit = 10, type } = req.query;
     const offset = (page - 1) * limit;
 
-    console.log('📢 开始查询公告列表...');
-
     let query = supabase
       .from('announcements')
       .select('*')
-      .eq('status', 1);
+      .eq('status', 1)
+      .lte('start_time', new Date().toISOString())
+      .or(`end_time.is.null,end_time.gte.${new Date().toISOString()}`);
 
     // 添加类型过滤
     if (type && type !== '') {
@@ -36,13 +36,13 @@ router.get('/', async (req, res) => {
       });
     }
 
-    console.log(`✅ 公告列表查询成功，共 ${announcements?.length || 0} 条`);
-
     // 获取总数
     let countQuery = supabase
       .from('announcements')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 1);
+      .eq('status', 1)
+      .lte('start_time', new Date().toISOString())
+      .or(`end_time.is.null,end_time.gte.${new Date().toISOString()}`);
 
     if (type && type !== '') {
       countQuery = countQuery.eq('type', type);
@@ -122,12 +122,12 @@ router.get('/home/list', async (req, res) => {
   try {
     const { limit = 5 } = req.query;
 
-    console.log('🏠 开始查询首页公告...');
-
     const { data: announcements, error } = await supabase
       .from('announcements')
       .select('id, title, type, created_at')
       .eq('status', 1)
+      .lte('start_time', new Date().toISOString())
+      .or(`end_time.is.null,end_time.gte.${new Date().toISOString()}`)
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(parseInt(limit));
@@ -139,8 +139,6 @@ router.get('/home/list', async (req, res) => {
         message: '获取首页公告失败'
       });
     }
-
-    console.log(`✅ 首页公告查询成功，共 ${announcements?.length || 0} 条`);
 
     // 格式化时间
     const formattedAnnouncements = (announcements || []).map(item => ({

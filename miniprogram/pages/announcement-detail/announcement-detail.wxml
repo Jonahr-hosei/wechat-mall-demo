@@ -1,0 +1,34 @@
+<!--pages/announcement-detail/announcement-detail.wxml-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{error}}" class="error-container">
+    <text class="error-text">加载失败</text>
+    <button class="retry-btn" bindtap="onRetry">重新加载</button>
+  </view>
+
+  <!-- 公告详情 -->
+  <view wx:else class="announcement-detail">
+    <view class="announcement-header">
+      <view class="announcement-icon">
+        <image src="/images/announcement.svg" class="announcement-icon-img"/>
+      </view>
+      <view class="announcement-meta">
+        <text class="announcement-title">{{announcement.title}}</text>
+        <view class="announcement-info">
+          <text class="announcement-time">{{announcement.created_at}}</text>
+          <text class="announcement-type">{{typeText}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="announcement-content">
+      <text class="content-text">{{announcement.content}}</text>
+    </view>
+  </view>
+</view> 

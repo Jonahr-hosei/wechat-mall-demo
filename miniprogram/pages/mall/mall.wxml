@@ -16,7 +16,7 @@
 
   <!-- 分类筛选 -->
   <view class="category-filter">
-    <scroll-view scroll-x="true" class="category-scroll">
+    <scroll-view scroll-x="true" enhanced show-scrollbar="false" class="category-scroll">
       <view class="category-list">
         <view 
           wx:for="{{categories}}" 
@@ -42,12 +42,16 @@
       data-id="{{item.id}}"
     >
       <image 
+        wx:if="{{item.image}}"
         class="product-image" 
-        src="{{item.image || '/images/default-category.svg'}}" 
+        src="{{item.image}}" 
         mode="aspectFill"
         binderror="onImageError"
         data-index="{{index}}"
       ></image>
+      <view wx:else class="default-image">
+        <text>暂无图片</text>
+      </view>
       <view class="product-info">
         <view class="product-name">{{item.name}}</view>
         <view class="product-desc">{{item.description}}</view>

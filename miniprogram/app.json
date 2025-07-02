@@ -11,7 +11,11 @@
     "pages/payment/payment",
     "pages/payment-success/payment-success",
     "pages/order-detail/order-detail",
-    "pages/cart2/cart"
+    "pages/cart2/cart",
+    "pages/announcements/announcements",
+    "pages/announcement-detail/announcement-detail",
+    "pages/level-desc/level-desc",
+    "pages/tasks/tasks"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -53,9 +57,16 @@
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
+  "requiredBackgroundModes": ["audio"],
   "permission": {
     "scope.userLocation": {
       "desc": "您的位置信息将用于停车服务"
     }
+  },
+  "networkTimeout": {
+    "request": 15000,
+    "connectSocket": 15000,
+    "uploadFile": 15000,
+    "downloadFile": 15000
   }
 } 

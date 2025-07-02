@@ -1,8 +1,10 @@
 // mall.js
-const app = getApp()
+const { safeGetApp, safePage } = require('../../utils/util.js')
 const { getCategories, getProducts } = require('../../utils/request.js')
 
-Page({
+const app = safeGetApp()
+
+safePage({
   data: {
     searchKeyword: '',
     currentCategory: 'all',
@@ -247,7 +249,7 @@ Page({
     const index = e.currentTarget.dataset.index;
     const products = this.data.products;
     if (products[index]) {
-      products[index].image = '/images/default-category.svg'; // 使用默认图片
+      products[index].image = null; // 设为null以显示默认文字
       this.setData({
         products: products
       });

@@ -8,7 +8,42 @@
     </swiper-item>
   </swiper>
 
-  <!-- 功能导航 -->
+  <!-- 会员等级板块（美化版） -->
+  <view class="member-card">
+    <view style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <view style="flex:1;">
+        <view class="member-info">
+          <image class="avatar" src="{{userInfo && userInfo.avatarUrl ? userInfo.avatarUrl : '/images/default-avatar.png'}}"/>
+          <view class="info">
+            <view style="display:flex;align-items:center;">
+              <text class="nickname">{{userInfo ? userInfo.nickName : '未登录'}}</text>
+              <view class="level-badge mini">V{{userLevel}} {{levelTitle}}</view>
+            </view>
+            <text class="phone" wx:if="{{userInfo && userInfo.phone}}">{{userInfo.phone}}</text>
+          </view>
+        </view>
+      </view>
+      <button class="level-info-btn" bindtap="onLevelInfoTap">等级说明</button>
+    </view>
+    <view class="member-progress">
+      <view style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8rpx;">
+        <text class="progress-level">V{{userLevel}}</text>
+        <view style="flex:1;margin:0 12rpx;">
+          <view class="progress-bar-bg">
+            <view class="progress-bar" style="width:{{userPoints && pointsToNextLevel ? (userPoints/(userPoints+pointsToNextLevel))*100 : 0}}%;"></view>
+          </view>
+        </view>
+        <text class="progress-level">V{{userLevel + 1}}</text>
+      </view>
+      <view style="display:flex;justify-content:space-between;align-items:center;">
+        <text>积分：{{userPoints}}</text>
+        <text class="progress-text">还需{{pointsToNextLevel}}升级</text>
+      </view>
+    </view>
+    <button class="task-btn" bindtap="onTaskTap">做任务赚积分</button>
+  </view>
+
+  <!-- 四个功能按钮区 -->
   <view class="nav-grid">
     <view class="nav-item" bindtap="onMallTap">
       <image src="/images/mall.png" class="nav-icon"/>
@@ -18,15 +53,68 @@
       <image src="/images/parking.svg" class="nav-icon"/>
       <text class="nav-text">停车</text>
     </view>
-    <view class="nav-item" bindtap="onPointsTap">
-      <image src="/images/points.svg" class="nav-icon"/>
-      <text class="nav-text">积分</text>
+    <view class="nav-item" bindtap="onSignTap">
+      <image src="/images/sign-in.svg" class="nav-icon"/>
+      <text class="nav-text">签到</text>
     </view>
-    <view class="nav-item" bindtap="onUserTap">
-      <image src="/images/user.png" class="nav-icon"/>
-      <text class="nav-text">我的</text>
+    <view class="nav-item" bindtap="onServiceTap">
+      <image src="/images/service.svg" class="nav-icon"/>
+      <text class="nav-text">客服</text>
     </view>
   </view>
+
+  <!-- 会员权益板块 -->
+  <view class="member-benefit-section">
+    <view class="benefit-header">
+      <text class="benefit-title">会员权益</text>
+      <text class="benefit-desc">不同等级会员可享受不同专属权益</text>
+    </view>
+    <view class="benefit-list">
+      <view class="benefit-item" wx:for="{{benefitList}}" wx:key="level">
+        <image class="benefit-icon" src="{{item.icon}}" mode="aspectFill"/>
+        <view class="benefit-info">
+          <view class="benefit-main">
+            <text class="benefit-name">{{item.name}}</text>
+            <text class="benefit-tag">{{item.tag}}</text>
+          </view>
+          <text class="benefit-desc">{{item.desc}}</text>
+          <text class="benefit-rule">该权益专为 V{{item.minLevel}}及以上会员 提供</text>
+          <view class="benefit-btn-row">
+            <button class="benefit-btn" style="width: 226rpx; height: 54rpx; display: block; box-sizing: border-box; left: 78rpx; top: 0rpx; position: relative">立即兑换</button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view style="height: 40rpx;"></view>
+
+  <!-- 商场公告板块（已注释隐藏） -->
+  <!--
+  <view wx:if="{{announcements.length > 0}}" class="section">
+    <view class="section-header">
+      <text class="section-title">商场公告</text>
+      <text class="section-more" bindtap="onAnnouncementsTap">更多 ></text>
+    </view>
+    <view class="announcement-list">
+      <view 
+        class="announcement-item" 
+        wx:for="{{announcements}}" 
+        wx:key="index"
+        bindtap="onAnnouncementTap"
+        data-id="{{item.id}}"
+      >
+        <view class="announcement-icon">
+          <image src="/images/announcement.svg" class="announcement-icon-img"/>
+        </view>
+        <view class="announcement-content">
+          <text class="announcement-title">{{item.title}}</text>
+          <text class="announcement-time">{{item.time}}</text>
+        </view>
+        <view class="announcement-arrow">></view>
+      </view>
+    </view>
+  </view>
+  -->
 
   <!-- 加载状态 -->
   <view wx:if="{{loading}}" class="loading-container">
@@ -37,34 +125,15 @@
   <!-- 错误状态 -->
   <view wx:elif="{{error}}" class="error-container">
     <text class="error-text">加载失败</text>
-    <button class="retry-btn" bindtap="onRetry">重新加载</button>
+    <view class="error-buttons">
+      <button class="retry-btn" bindtap="onRetry">重新加载</button>
+      <button class="diagnose-btn" bindtap="onNetworkDiagnose">网络诊断</button>
+      <button class="fix-btn" bindtap="onQuickFix">快速修复</button>
+    </view>
   </view>
 
   <!-- 内容区域 -->
   <view wx:else>
-    <!-- 分类导航 -->
-    <view wx:if="{{categories.length > 0}}" class="section">
-      <view class="section-header">
-        <text class="section-title">商品分类</text>
-        <text class="section-more" bindtap="onMallTap">更多 ></text>
-      </view>
-      <scroll-view class="category-scroll" scroll-x="true">
-        <view class="category-list">
-          <view 
-            class="category-item" 
-            wx:for="{{categories}}" 
-            wx:key="index"
-            bindtap="onCategoryTap"
-            data-id="{{item.id}}"
-            data-name="{{item.name}}"
-          >
-            <image src="{{item.image || '/images/default-category.svg'}}" class="category-image"/>
-            <text class="category-name">{{item.name}}</text>
-          </view>
-        </view>
-      </scroll-view>
-    </view>
-
     <!-- 热门商品 -->
     <view wx:if="{{hotProducts.length > 0}}" class="section">
       <view class="section-header">
@@ -79,7 +148,10 @@
           bindtap="onProductTap"
           data-id="{{item.id}}"
         >
-          <image src="{{item.image || '/images/default-category.svg'}}" mode="aspectFill" class="product-image" binderror="onImageError" data-type="hot" data-index="{{index}}"/>
+          <image wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" class="product-image" binderror="onImageError" data-type="hot" data-index="{{index}}"/>
+          <view wx:else class="default-image">
+            <text>暂无图片</text>
+          </view>
           <view class="product-info">
             <text class="product-name">{{item.name}}</text>
             <text class="product-price">¥{{item.price}}</text>
@@ -102,30 +174,14 @@
           bindtap="onProductTap"
           data-id="{{item.id}}"
         >
-          <image src="{{item.image || '/images/default-category.svg'}}" mode="aspectFill" class="product-image" binderror="onImageError" data-type="new" data-index="{{index}}"/>
+          <image wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" class="product-image" binderror="onImageError" data-type="new" data-index="{{index}}"/>
+          <view wx:else class="default-image">
+            <text>暂无图片</text>
+          </view>
           <view class="product-info">
             <text class="product-name">{{item.name}}</text>
             <text class="product-price">¥{{item.price}}</text>
           </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 公告 -->
-    <view wx:if="{{notices.length > 0}}" class="section">
-      <view class="section-header">
-        <text class="section-title">最新公告</text>
-      </view>
-      <view class="notice-list">
-        <view 
-          class="notice-item" 
-          wx:for="{{notices}}" 
-          wx:key="index"
-          bindtap="onNoticeTap"
-          data-id="{{item.id}}"
-        >
-          <text class="notice-title">{{item.title}}</text>
-          <text class="notice-time">{{item.time}}</text>
         </view>
       </view>
     </view>

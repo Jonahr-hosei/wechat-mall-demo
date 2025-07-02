@@ -5,8 +5,8 @@
     "include": []
   },
   "setting": {
-    "urlCheck": true,
-    "es6": false,
+    "urlCheck": false,
+    "es6": true,
     "enhance": false,
     "postcss": true,
     "preloadBackgroundData": false,

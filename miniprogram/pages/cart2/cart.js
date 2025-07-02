@@ -1,8 +1,10 @@
 // cart2.js
-const app = getApp()
+const { safeGetApp, safePage } = require('../../utils/util.js')
 const util = require('../../utils/util.js')
 
-Page({
+const app = safeGetApp()
+
+safePage({
   data: {
     cartItems: [],
     selectAll: false,

@@ -1,8 +1,15 @@
 // parking.js
-const app = getApp()
-const { api } = require('../../utils/request.js')
+const { safeGetApp, safePage } = require('../../utils/util.js')
+const { getParkingInfo, startParking, endParking, payParking, getParkingHistory } = require('../../utils/request.js')
 
-Page({
+const app = safeGetApp()
+
+// 安全的获取baseUrl函数
+const getBaseUrl = () => {
+  return app && app.globalData && app.globalData.baseUrl ? app.globalData.baseUrl : 'https://wxmall.shop'
+}
+
+safePage({
   data: {
     parkingInfo: null,
     plateList: [],
@@ -39,7 +46,7 @@ Page({
     if (!openId) return
 
     try {
-      const parkingData = await api.getParkingStatus(openId)
+      const parkingData = await getParkingInfo(openId)
       if (parkingData.success) {
         this.setData({ parkingInfo: parkingData.data })
       }
@@ -54,7 +61,7 @@ Page({
     if (!openId) return
 
     wx.request({
-      url: `${app.globalData.baseUrl}/parking/plates`,
+      url: `${getBaseUrl()}/parking/plates`,
       method: 'GET',
       data: { openId: openId },
       success: (res) => {
@@ -93,7 +100,7 @@ Page({
     if (!openId) return
 
     try {
-      const historyData = await api.getParkingHistory(openId, { limit: 10 })
+      const historyData = await getParkingHistory(openId, { limit: 10 })
       if (historyData.success) {
         this.setData({ parkingHistory: historyData.data })
       }
@@ -125,7 +132,7 @@ Page({
     this.setData({ loading: true })
 
     try {
-      const parkingData = await api.startParking({
+      const parkingData = await startParking({
         user_id: openId,
         plate_number: plateNumber
       })
@@ -166,7 +173,7 @@ Page({
     this.setData({ loading: true })
 
     try {
-      const endData = await api.endParking(currentParking.id)
+      const endData = await endParking(currentParking.id)
       if (endData.success) {
         this.setData({
           endTime: endData.data.exit_time,
@@ -199,7 +206,7 @@ Page({
     this.setData({ loading: true })
 
     try {
-      const paymentData = await api.payParking(currentParking.id, {
+      const paymentData = await payParking(currentParking.id, {
         payment_method: 'wechat',
         amount: fee
       })
@@ -280,7 +287,7 @@ Page({
     }
 
     wx.request({
-      url: `${app.globalData.baseUrl}/parking/plates`,
+      url: `${getBaseUrl()}/parking/plates`,
       method: 'POST',
       data: plateData,
       success: (res) => {
@@ -309,7 +316,7 @@ Page({
     const openId = wx.getStorageSync('openId')
 
     wx.request({
-      url: `${app.globalData.baseUrl}/parking/plates/default`,
+      url: `${getBaseUrl()}/parking/plates/default`,
       method: 'PUT',
       data: {
         openId: openId,
@@ -338,7 +345,7 @@ Page({
           const openId = wx.getStorageSync('openId')
           
           wx.request({
-            url: `${app.globalData.baseUrl}/parking/plates/${id}`,
+            url: `${getBaseUrl()}/parking/plates/${id}`,
             method: 'DELETE',
             data: { openId: openId },
             success: (res) => {

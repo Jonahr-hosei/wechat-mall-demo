@@ -323,4 +323,31 @@
     align-items: flex-start;
     gap: 5rpx;
   }
+}
+
+.no-parking {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0 40rpx 0;
+  background: #fff;
+  border-radius: 20rpx;
+  margin: 32rpx 24rpx;
+  box-shadow: 0 4rpx 24rpx #eee;
+}
+.no-parking-image {
+  width: 120rpx;
+  height: 120rpx;
+  margin-bottom: 24rpx;
+}
+.no-parking-text {
+  font-size: 30rpx;
+  color: #232946;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+.no-parking-desc {
+  font-size: 24rpx;
+  color: #888;
 } 

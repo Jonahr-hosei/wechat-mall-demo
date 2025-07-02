@@ -62,24 +62,59 @@
   padding: 10rpx 0 10rpx 0;
   margin-bottom: 10rpx;
 }
+
+/* 分类滚动区域 */
 .category-scroll {
   white-space: nowrap;
+  overflow-x: auto;
 }
+
+/* 隐藏滚动条 - 更有效的方法 */
+.category-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  color: transparent;
+}
+
+/* 分类列表 */
 .category-list {
   display: flex;
-  align-items: center;
+  padding: 10rpx 0; /* 减少上下间距 */
 }
+
+/* 分类项 */
 .category-item {
-  padding: 10rpx 30rpx;
+  padding: 8rpx 25rpx; /* 减少内边距 */
   margin-right: 20rpx;
   border-radius: 30rpx;
   background: #f7f7f7;
   color: #333;
   font-size: 26rpx;
+  height: 55rpx; /* 调整为当前高度的三分之二左右 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .category-item.active {
   background: #ff5000;
   color: #fff;
+}
+
+/* 分类图片 */
+.category-image {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  margin-bottom: 10rpx;
+}
+
+/* 分类名称 */
+.category-name {
+  font-size: 24rpx;
+  color: #333;
+  text-align: center;
 }
 
 .product-list {
@@ -102,6 +137,19 @@
   border-radius: 16rpx 16rpx 0 0;
   object-fit: cover;
   display: block;
+}
+
+/* 默认图片样式 */
+.default-image {
+  width: 100%;
+  height: 260rpx;
+  border-radius: 16rpx 16rpx 0 0;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 24rpx;
 }
 
 .product-info {

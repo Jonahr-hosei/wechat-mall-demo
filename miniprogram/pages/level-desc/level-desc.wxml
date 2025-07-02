@@ -1,0 +1,18 @@
+<view class="level-header">
+  <view class="level-header-title">会员等级介绍</view>
+  <view class="level-header-desc">1. 会员等级将根据您累计获得的积分自动升级；</view>
+  <view class="level-header-desc">2. 等级越高即可享受更多专属权益～</view>
+</view>
+<view class="level-table">
+  <view class="level-table-header">
+    <text class="level-table-col">会员等级</text>
+    <text class="level-table-col">会员称号</text>
+    <text class="level-table-col rule-col">等级规则</text>
+  </view>
+  <view class="level-table-row" wx:for="{{levelList}}" wx:key="level">
+    <text class="level-table-col">V{{item.level}}</text>
+    <text class="level-table-col">{{item.title}}</text>
+    <text class="level-table-col rule-col">{{item.rule}}</text>
+  </view>
+</view>
+<view class="level-note">注：积分通过消费、签到、任务等方式获得，每累计200积分自动升级到下一会员等级。</view> 

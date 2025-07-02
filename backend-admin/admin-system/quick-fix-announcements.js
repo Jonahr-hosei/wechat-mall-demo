@@ -1,131 +1,152 @@
 const supabase = require('./config/database');
 
 async function quickFixAnnouncements() {
-  console.log('🔧 开始快速修复公告数据...');
-  
-  // 检查现有公告
-  const { data: existingAnnouncements, error: checkError } = await supabase
-    .from('announcements')
-    .select('*');
-  
-  if (checkError) {
-    console.error('❌ 检查现有公告失败:', checkError);
-    return;
-  }
-  
-  console.log(`📊 现有公告数量: ${existingAnnouncements?.length || 0}`);
-  
-  // 如果没有公告数据，添加一些测试数据
-  if (!existingAnnouncements || existingAnnouncements.length === 0) {
-    console.log('📝 没有找到公告数据，正在添加测试数据...');
-    
-    const testAnnouncements = [
-      {
-        title: '欢迎来到微信商城',
-        content: '感谢您使用我们的微信商城系统，这里有丰富的商品和优质的服务！',
-        type: 'general',
-        priority: 10,
-        status: 1
-      },
-      {
-        title: '新品上市通知',
-        content: '最新商品已经上架，快来选购吧！限时优惠，先到先得。',
-        type: 'promotion',
-        priority: 8,
-        status: 1
-      },
-      {
-        title: '系统维护通知',
-        content: '为了提供更好的服务，系统将于今晚进行维护升级，请提前做好准备。',
-        type: 'maintenance',
-        priority: 5,
-        status: 1
-      },
-      {
-        title: '积分活动开始',
-        content: '购物即可获得积分，积分可以兑换优惠券和礼品，快来参与吧！',
-        type: 'activity',
-        priority: 7,
-        status: 1
-      },
-      {
-        title: '停车服务说明',
-        content: '商场提供免费停车服务，购物满100元可免费停车2小时。',
-        type: 'service',
-        priority: 6,
-        status: 1
-      }
-    ];
-    
-    const { data: insertedAnnouncements, error: insertError } = await supabase
+  console.log('🔧 开始快速修复公告功能...\n');
+
+  try {
+    // 1. 检查数据库连接
+    console.log('1️⃣ 检查数据库连接...');
+    const { data: testData, error: testError } = await supabase
       .from('announcements')
-      .insert(testAnnouncements)
-      .select();
-    
-    if (insertError) {
-      console.error('❌ 插入测试公告失败:', insertError);
+      .select('count', { count: 'exact', head: true });
+
+    if (testError) {
+      console.error('❌ 数据库连接失败:', testError.message);
+      console.log('💡 解决方案: 请检查环境变量配置');
       return;
     }
-    
-    console.log(`✅ 成功添加 ${insertedAnnouncements?.length || 0} 条测试公告`);
-    
-    if (insertedAnnouncements) {
-      console.log('\n📋 添加的公告:');
-      insertedAnnouncements.forEach((announcement, index) => {
-        console.log(`   ${index + 1}. ${announcement.title} (${announcement.type})`);
-      });
+    console.log('✅ 数据库连接成功\n');
+
+    // 2. 检查公告表是否存在数据
+    console.log('2️⃣ 检查公告数据...');
+    const { data: announcements, error: dataError } = await supabase
+      .from('announcements')
+      .select('*');
+
+    if (dataError) {
+      console.error('❌ 查询公告数据失败:', dataError.message);
+      console.log('💡 解决方案: 请执行SQL脚本创建表');
+      return;
     }
-  } else {
-    // 如果有数据但状态不是1，更新状态
-    const disabledAnnouncements = existingAnnouncements.filter(a => a.status !== 1);
-    
-    if (disabledAnnouncements.length > 0) {
-      console.log(`⚠️ 发现 ${disabledAnnouncements.length} 条禁用的公告，正在启用...`);
+
+    if (!announcements || announcements.length === 0) {
+      console.log('⚠️  公告表为空，正在插入示例数据...');
       
-      const { error: updateError } = await supabase
+      // 插入示例数据
+      const { data: insertData, error: insertError } = await supabase
         .from('announcements')
-        .update({ status: 1 })
-        .in('id', disabledAnnouncements.map(a => a.id));
-      
-      if (updateError) {
-        console.error('❌ 更新公告状态失败:', updateError);
+        .insert([
+          {
+            title: '欢迎光临我们的商场',
+            content: '感谢您选择我们的商场，我们致力于为您提供最优质的服务和商品。',
+            type: 'general',
+            priority: 1,
+            status: 1
+          },
+          {
+            title: '商场营业时间调整',
+            content: '为了更好地服务顾客，我们的营业时间调整为：周一至周日 9:00-22:00。',
+            type: 'important',
+            priority: 2,
+            status: 1
+          },
+          {
+            title: '新春特惠活动',
+            content: '新春佳节即将到来，全场商品8折起，更有精美礼品相送！',
+            type: 'promotion',
+            priority: 3,
+            status: 1
+          }
+        ]);
+
+      if (insertError) {
+        console.error('❌ 插入示例数据失败:', insertError.message);
         return;
       }
-      
-      console.log('✅ 成功启用所有公告');
+      console.log('✅ 示例数据插入成功\n');
     } else {
-      console.log('✅ 所有公告都已启用');
+      console.log(`✅ 公告数据正常，共 ${announcements.length} 条记录\n`);
     }
-  }
-  
-  // 验证修复结果
-  console.log('\n🔍 验证修复结果...');
-  const { data: finalAnnouncements, error: finalError } = await supabase
-    .from('announcements')
-    .select('*')
-    .eq('status', 1)
-    .order('priority', { ascending: false })
-    .order('created_at', { ascending: false });
-  
-  if (finalError) {
-    console.error('❌ 验证失败:', finalError);
-    return;
-  }
-  
-  console.log(`📈 最终启用公告数量: ${finalAnnouncements?.length || 0}`);
-  
-  if (finalAnnouncements && finalAnnouncements.length > 0) {
-    console.log('\n📋 最终公告列表:');
-    finalAnnouncements.forEach((announcement, index) => {
-      console.log(`   ${index + 1}. ${announcement.title} (优先级: ${announcement.priority})`);
+
+    // 3. 测试首页API查询
+    console.log('3️⃣ 测试首页API查询...');
+    const { data: homeAnnouncements, error: homeError } = await supabase
+      .from('announcements')
+      .select('id, title, type, created_at')
+      .eq('status', 1)
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (homeError) {
+      console.error('❌ 首页API查询失败:', homeError.message);
+      return;
+    }
+
+    console.log(`✅ 首页API查询成功，返回 ${homeAnnouncements.length} 条公告`);
+    homeAnnouncements.forEach((item, index) => {
+      console.log(`   ${index + 1}. ${item.title} (${item.type})`);
     });
+    console.log('');
+
+    // 4. 测试时间格式化
+    console.log('4️⃣ 测试时间格式化...');
+    const formattedAnnouncements = homeAnnouncements.map(item => ({
+      ...item,
+      time: new Date(item.created_at).toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+    }));
+
+    console.log('✅ 时间格式化成功');
+    formattedAnnouncements.forEach((item, index) => {
+      console.log(`   ${index + 1}. ${item.title} - ${item.time}`);
+    });
+    console.log('');
+
+    // 5. 生成测试响应
+    console.log('5️⃣ 生成测试响应...');
+    const testResponse = {
+      success: true,
+      data: {
+        hotProducts: [],
+        newProducts: [],
+        announcements: formattedAnnouncements
+      }
+    };
+
+    console.log('✅ 测试响应生成成功');
+    console.log('📋 响应数据结构:');
+    console.log(JSON.stringify(testResponse, null, 2));
+    console.log('');
+
+    // 6. 检查小程序配置
+    console.log('6️⃣ 检查小程序配置...');
+    console.log('📱 小程序端检查清单:');
+    console.log('   - 确保 request.js 中的 baseUrl 配置正确');
+    console.log('   - 确保微信开发者工具中已配置域名白名单');
+    console.log('   - 检查小程序控制台是否有错误信息');
+    console.log('   - 清除小程序缓存并重新编译');
+    console.log('');
+
+    console.log('🎉 快速修复完成！');
+    console.log('');
+    console.log('📋 下一步操作:');
+    console.log('1. 启动后端服务器: npm start');
+    console.log('2. 在微信开发者工具中刷新小程序');
+    console.log('3. 查看首页是否显示公告');
+    console.log('4. 如果仍有问题，请查看调试指南');
+
+  } catch (error) {
+    console.error('❌ 快速修复失败:', error.message);
+    console.log('');
+    console.log('💡 建议操作:');
+    console.log('1. 检查环境变量配置');
+    console.log('2. 确认Supabase项目设置');
+    console.log('3. 查看详细错误信息');
   }
-  
-  console.log('\n🎉 快速修复完成！');
-  console.log('💡 现在可以运行以下命令测试:');
-  console.log('   node test-announcements-data.js');
-  console.log('   node test-announcements-api.js');
-  
 }
 
 // 如果直接运行此文件

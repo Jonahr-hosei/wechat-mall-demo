@@ -120,11 +120,6 @@
   display: block;
 }
 
-.quantity-control {
-  display: flex;
-  align-items: center;
-}
-
 .quantity-btn {
   width: 80rpx;
   height: 80rpx;
@@ -546,9 +541,10 @@
 
 .quantity-control {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-end;
+  justify-content: flex-end;
   gap: 20rpx;
+
 }
 
 .quantity-btn {

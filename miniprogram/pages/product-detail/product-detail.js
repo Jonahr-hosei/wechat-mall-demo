@@ -1,7 +1,9 @@
-const app = getApp()
+const { safeGetApp, safePage } = require('../../utils/util.js')
 const { getProductDetail, createOrder } = require('../../utils/request.js')
 
-Page({
+const app = safeGetApp()
+
+safePage({
   data: {
     product: null,
     loading: true,
@@ -248,8 +250,10 @@ Page({
 
   // 取消订单
   cancelOrder(orderId, orderNo) {
+    const baseUrl = app && app.globalData && app.globalData.baseUrl ? app.globalData.baseUrl : 'https://wechat-mall-demo.vercel.app'
+    
     wx.request({
-      url: `${app.globalData.baseUrl}/orders/${orderId}/cancel`,
+      url: `${baseUrl}/orders/${orderId}/cancel`,
       method: 'POST',
       success: (res) => {
         if (res.data.success) {

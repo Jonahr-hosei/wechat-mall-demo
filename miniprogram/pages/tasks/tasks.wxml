@@ -1,0 +1,21 @@
+<view class="task-card">
+  <view class="task-title">每日任务</view>
+  <view class="task-list">
+    <view class="task-item">
+      <view class="task-icon sign"></view>
+      <view class="task-info">
+        <text class="task-name">每日签到</text>
+        <text class="task-desc">每日首次签到可获得积分</text>
+      </view>
+      <button class="task-btn">去签到</button>
+    </view>
+    <view class="task-item">
+      <view class="task-icon game"></view>
+      <view class="task-info">
+        <text class="task-name">玩小游戏</text>
+        <text class="task-desc">完成小游戏任务可获得积分</text>
+      </view>
+      <button class="task-btn disabled">敬请期待</button>
+    </view>
+  </view>
+</view> 
