@@ -45,9 +45,41 @@ const MemberBenefits = () => {
     } catch {}
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`/api/member-benefits/${id}`);
+      message.success('删除成功');
+      fetchList();
+    } catch (e) { message.error('删除失败'); }
+  };
+
   return (
     <div>
-      {/* Rest of the component code remains unchanged */}
+      <Button type="primary" onClick={() => showModal(null)} style={{marginBottom:16}}>新增会员权益</Button>
+      <Table columns={[
+        { title: '标题', dataIndex: 'name', key: 'name' },
+        { title: '内容', dataIndex: 'description', key: 'description' },
+        { title: '等级要求', dataIndex: 'min_level', key: 'min_level' },
+        { title: '标签', dataIndex: 'tag', key: 'tag' },
+        { title: '图标', dataIndex: 'icon', key: 'icon', render: (icon) => icon ? <img src={icon} alt="icon" style={{width:32}}/> : '-' },
+        { title: '状态', dataIndex: 'status', key: 'status', render: (status, record) => <Switch checked={!!status} checkedChildren="有效" unCheckedChildren="无效" onChange={val => {
+          axios.put(`/api/member-benefits/${record.id}`, { ...record, status: val ? 1 : 0 }); fetchList(); }}/>
+        },
+        { title: '操作', key: 'action', render: (_, record) => <Space>
+          <Button type="link" onClick={() => showModal(record)}>编辑</Button>
+          <Button type="link" danger onClick={() => handleDelete(record.id)}>删除</Button>
+        </Space> }
+      ]} dataSource={list} rowKey="id" loading={loading} />
+      <Modal title={editing ? '编辑会员权益' : '新增会员权益'} open={modalVisible} onOk={handleOk} onCancel={() => setModalVisible(false)}>
+        <Form form={form} layout="vertical">
+          <Form.Item name="name" label="标题" rules={[{ required: true, message: '请输入标题' }]}><Input /></Form.Item>
+          <Form.Item name="description" label="内容" rules={[{ required: true, message: '请输入内容' }]}><Input.TextArea rows={3}/></Form.Item>
+          <Form.Item name="min_level" label="等级要求" rules={[{ required: true, message: '请输入等级要求' }]}><InputNumber min={0} max={9} style={{width:'100%'}}/></Form.Item>
+          <Form.Item name="tag" label="标签"><Input /></Form.Item>
+          <Form.Item name="icon" label="图标URL"><Input /></Form.Item>
+          <Form.Item name="status" label="状态" valuePropName="checked"><Switch checkedChildren="有效" unCheckedChildren="无效" /></Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
