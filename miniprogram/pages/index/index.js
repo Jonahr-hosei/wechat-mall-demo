@@ -441,14 +441,13 @@ safePage({
   async loadMemberBenefits() {
     try {
       const res = await wx.request({
-        url: '你的后端接口地址/api/member-benefits?status=1',
+        url: 'https://wechat-mall-demo.vercel.app/api/member-benefits?status=1',
         method: 'GET',
       })
       if (res.data && res.data.success) {
-        // 将desc字段同步为description
         const benefitList = (res.data.data || []).map(item => ({
           ...item,
-          desc: item.description // 兼容前端渲染
+          desc: item.description
         }))
         this.setData({ benefitList })
       }

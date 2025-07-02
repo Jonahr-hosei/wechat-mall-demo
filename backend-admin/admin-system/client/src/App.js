@@ -11,6 +11,7 @@ import AdminUsers from './pages/AdminUsers';
 import Points from './pages/Points';
 import Parking from './pages/Parking';
 import Statistics from './pages/Statistics';
+import MemberBenefits from './pages/MemberBenefits';
 import Layout from './components/Layout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
@@ -45,6 +46,7 @@ function App() {
                 <Route path="points" element={<Points />} />
                 <Route path="parking" element={<Parking />} />
                 <Route path="statistics" element={<Statistics />} />
+                <Route path="member-benefits" element={<MemberBenefits />} />
               </Route>
             </Routes>
           </div>

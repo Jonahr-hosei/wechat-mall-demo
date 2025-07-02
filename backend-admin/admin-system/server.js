@@ -195,6 +195,11 @@ try {
   app.use('/api/announcements', announcementsRoutes);
   console.log('✅ 公告路由加载完成');
 
+  // 会员权益路由
+  const memberBenefitsRouter = require('./routes/memberBenefits');
+  app.use('/api/member-benefits', memberBenefitsRouter);
+  console.log('✅ 会员权益路由加载完成');
+
 } catch (error) {
   console.error('❌ 路由加载失败:', error);
   app.use('/api/*', (req, res) => {
