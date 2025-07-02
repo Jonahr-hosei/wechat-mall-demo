@@ -58,6 +58,11 @@ const Layout = () => {
       label: '积分管理',
     },
     {
+      key: '/member-benefits',
+      icon: React.createElement(GiftOutlined),
+      label: '会员权益管理',
+    },
+    {
       key: '/parking',
       icon: React.createElement(CarOutlined),
       label: '停车管理',
