@@ -1,9 +1,8 @@
-FROM node:18-bullseye
+FROM tencentyun/cloudbase-node:18
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN apt-get update && apt-get install -y ca-certificates
 RUN npm install --only=production
 
 COPY . .
