@@ -26,7 +26,6 @@
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.29.4",
     "multer": "^1.4.5-lts.1",
-    "sqlite3": "^5.1.6",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
