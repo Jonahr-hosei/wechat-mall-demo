@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-// 配置 axios 基础 URL
+// 统一API请求域名为自己的域名，走Cloudflare代理
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://wxmall.shop';
 axios.defaults.baseURL = API_BASE_URL;
 
